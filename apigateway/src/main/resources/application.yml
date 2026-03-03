@@ -1,129 +1,93 @@
 server:
-  port: 8080
-  error:
-    whitelabel:
-      enabled: false
-
-resilience4j:
-  circuitbreaker:
-    instances:
-      metadataCircuitBreaker:
-        register-health-indicator: true
-        sliding-window-type: COUNT_BASED
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
-        automatic-transition-from-open-to-half-open-enabled: true
-
-  timelimiter:
-    instances:
-      metadataCircuitBreaker:
-        timeout-duration: 3s
-        cancel-running-future: true
+  port: ${PORT:8080}
 
 spring:
   application:
-    name: ApiGateway
-  profiles:
-    active: dev
-  webflux:
-    base-path: /
+    name: api-gateway
+
+  # ── JWT / OAuth2 ──────────────────────────────────────────
+  #security:
+  #  oauth2:
+  #    resourceserver:
+  #      jwt:
+  #        jwk-set-uri: ${JWT_JWK_SET_URI:https://your-auth-server/.well-known/jwks.json}
+
+  # ── Spring Cloud Gateway routes ──────────────────────────
   cloud:
     gateway:
-      routes:
-        # Thay vì http://localhost:8081, ta dùng lb:// cộng với TÊN SERVICE đăng ký trên Eureka
-        - id: dummy-echo-service
-          uri: lb://DUMMY-ECHO-SERVICE
-          predicates:
-            - Path=/api/internal/**
-          filters:
-            - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
 
-        # Franchise service
-        - id: franchise-auth
-          uri: lb://FRANCHISESERVICE
+      default-filters:
+        - name: CircuitBreaker
+          args:
+            name: defaultCircuitBreaker
+            fallbackUri: forward:/fallback/unknown
+
+      routes:
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
           predicates:
             - Path=/api/auth/**
 
-        - id: franchise-contract-service
-          uri: lb://FRANCHISESERVICE
-          predicates:
-            - Path=/api/contracts/**
-          filters:
-            - RewritePath=/api/contracts/(?<segment>.*), /api/contracts/${segment}
-        # Ví dụ sẵn cho các service sau này của bạn
-        # - id: franchise-service
-        #   uri: lb://FRANCHISE-SERVICE
-        #   predicates:
-        #     - Path=/api/franchises/**
-
-        # ========= ECHO =========
-#        - id: echo-service
-#          uri: lb://DUMMY-ECHO-SERVICE
-#          predicates:
-#            - Path=/api/internal/echo/**
-#          filters:
-#            - RewritePath=/api/internal/echo/(?<segment>.*), /${segment}
-
-        # ========= METADATA =========
         - id: metadata-service
           uri: lb://METADATA-SERVICE
           predicates:
             - Path=/api/metadata/**
-          filters:
-            - RewritePath=/api/metadata/(?<segment>.*), /${segment}
-            - name: CircuitBreaker
-              args:
-                name: metadataCircuitBreaker
-                fallbackUri: forward:/fallback/METADATA-SERVICE
 
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:8085/.well-known/jwks.json
-
-app:
-  version: 1.0.0
-  account-service:
-    jwks-url: http://localhost:8081/.well-known/jwks.json
-
-# --- CẤU HÌNH EUREKA CLIENT ---
+# ── Eureka Client ──────────────────────────────────────────
 eureka:
-  instance:
-    prefer-ip-address: true
   client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: ${HOSTNAME:localhost}
 
+# ── Rate Limit ─────────────────────────────────────────────
+rate-limit:
+  ip:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    default-limit: ${RATE_LIMIT_DEFAULT:60}
+    window-seconds: 60
+    refresh-seconds: 15
+    config-key: gateway.ip.rate_limit.per_minute
 
+# ── App info ───────────────────────────────────────────────
+app:
+  version: ${APP_VERSION:1.0.0}
+  slow-request:
+    threshold-ms: ${SLOW_REQUEST_THRESHOLD:2000}
+
+# ── Actuator ───────────────────────────────────────────────
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,circuitbreakers
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always
 
-jwt:
-  secret: Z3JvdXAxX2ZyYW5jaGlzZV9zZXJ2aWNlX3NlY3JldF8yMDI2
-  access-token-exp-minutes: 15
-  refresh-token-exp-days: 7
+# ── Resilience4j Circuit Breaker ───────────────────────────
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+    instances:
+      defaultCircuitBreaker:
+        baseConfig: default
 
-rate-limit:
-  ip:
-    enabled: true
-    config-key: gateway.ip.rate_limit.per_minute
-    default-limit: 60
-    window-seconds: 60
-    refresh-seconds: 15
-
+# ── Logging ────────────────────────────────────────────────
 logging:
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [${spring.application.name:}] [requestId:%X{requestId}] %logger - %msg%n"
+  level:
+    com.group1.apigateway: INFO
+    org.springframework.cloud.gateway: INFO
