@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: FranchiseService
+
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=YOUR_DATABASE_NAME;encrypt=true;trustServerCertificate=true
+    username: YOUR_USERNAME
+    password: YOUR_PASSWORD
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    database-platform: org.hibernate.dialect.SQLServerDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  address: 0.0.0.0
+  port: 8080
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html
+    disable-swagger-default-url: true
+
+JWT:
+    jwt.secret=YOR_SECRET_KEY
+    jwt.access-token-exp-minutes=YOUR_TIME
+    jwt.refresh-token-exp-days=YOUR_TIME
+
+REDIS:
+    spring.data.redis.host=YOUR_REDIS_HOST
+    spring.data.redis.port=YOUR_REDIS_PORT

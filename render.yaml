@@ -1,0 +1,67 @@
+# ============================================================
+#  Render Blueprint — deploy cả 2 services
+#  Đặt file này ở root repo (p:\Microservice\)
+#  Docs: https://render.com/docs/blueprint-spec
+# ============================================================
+
+services:
+  # ── 1. Eureka Discovery Server ───────────────────────────
+  - type: web
+    name: discovery-service
+    runtime: docker
+    dockerfilePath: ./discovery-service/Dockerfile
+    dockerContext: ./discovery-service
+    region: singapore          # đổi thành oregon, frankfurt… nếu cần
+    plan: free                 # free | starter | standard
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: PORT
+        value: 8761
+      - key: SERVER_PORT
+        value: 8761
+      # Eureka standalone — không tự register
+      - key: EUREKA_CLIENT_REGISTER_WITH_EUREKA
+        value: "false"
+      - key: EUREKA_CLIENT_FETCH_REGISTRY
+        value: "false"
+      - key: EUREKA_INSTANCE_HOSTNAME
+        fromService:
+          type: web
+          name: discovery-service
+          property: host        # Render tự inject hostname
+      - key: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+        value: http://localhost:8761/eureka/
+
+  # ── 2. API Gateway ──────────────────────────────────────
+  - type: web
+    name: api-gateway
+    runtime: docker
+    dockerfilePath: ./apigateway/Dockerfile
+    dockerContext: ./apigateway
+    region: singapore
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SERVER_PORT
+        value: 8080
+      # Eureka URL — trỏ tới discovery-service trên Render
+      - key: EUREKA_URL
+        fromService:
+          type: web
+          name: discovery-service
+          envVarKey: RENDER_INTERNAL_URL
+        # Render internal URL dạng: http://discovery-service:8761
+        # Cần append /eureka/
+      - key: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+        value: ${EUREKA_URL}/eureka/
+      # JWT JWKS endpoint (thay bằng URL thật)
+      - key: JWT_JWK_SET_URI
+        sync: false             # user phải nhập tay trên dashboard
+      - key: RATE_LIMIT_ENABLED
+        value: "true"
+      - key: RATE_LIMIT_DEFAULT
+        value: "60"
+      - key: APP_VERSION
+        value: "1.0.0"
