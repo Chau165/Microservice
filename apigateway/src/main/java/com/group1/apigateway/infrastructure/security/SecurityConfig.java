@@ -2,11 +2,15 @@ package com.group1.apigateway.infrastructure.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
+import reactor.core.publisher.Mono;
 
 @Configuration
 public class SecurityConfig {
@@ -17,7 +21,8 @@ public class SecurityConfig {
             ServerAuthenticationEntryPoint authenticationEntryPoint,
             ServerAccessDeniedHandler accessDeniedHandler,
             InternalHeaderInjectionWebFilter internalHeaderInjectionWebFilter,
-            IpRateLimitWebFilter ipRateLimitWebFilter
+            IpRateLimitWebFilter ipRateLimitWebFilter,
+            Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter
     ) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -37,13 +42,13 @@ public class SecurityConfig {
 
                         .anyExchange().permitAll()
                 )
-                // JWT validation via JWKS:
+                // JWT validation via HS256 shared-secret (khớp với AUTH-SERVICE):
                 // - đọc Authorization: Bearer <token>
-                // - verify signature theo jwk-set-uri
-                // - check expiration (exp)
+                // - verify signature bằng secret key HS256
+                // - check expiration (exp) tự động
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .authenticationEntryPoint(authenticationEntryPoint) 
-                        .jwt(jwt -> {}))
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
                 // Rate limit chạy trước AUTHENTICATION => works without JWT
                 .addFilterAt(ipRateLimitWebFilter, SecurityWebFiltersOrder.FIRST)
 

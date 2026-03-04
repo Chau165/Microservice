@@ -139,7 +139,8 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
     private String normalizeRole(String role) {
         if (role == null || role.trim().isEmpty())
             return null;
-        return role.startsWith("ROLE_") ? role.trim() : "ROLE_" + role.trim();
+        String trimmed = role.trim();
+        return trimmed.startsWith("ROLE_") ? trimmed.substring(5) : trimmed;
     }
 
     // ================== 403 Response ==================

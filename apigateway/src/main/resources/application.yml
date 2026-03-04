@@ -1,25 +1,29 @@
 server:
   port: ${PORT:8080}
+  error:
+    whitelabel:
+      enabled: false
 
 spring:
   application:
+    # Giữ theo file cũ (đang deploy). Nếu bạn muốn tên "ApiGateway" thì đổi ở đây.
     name: api-gateway
 
-  # ── JWT / OAuth2 ──────────────────────────────────────────
-  #security:
-  #  oauth2:
-  #    resourceserver:
-  #      jwt:
-  #        jwk-set-uri: ${JWT_JWK_SET_URI:https://your-auth-server/.well-known/jwks.json}
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
-  # ── Spring Cloud Gateway routes ──────────────────────────
+  webflux:
+    base-path: /
+
   cloud:
     gateway:
+      # Giữ locator như file cũ
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
 
+      # Giữ default circuit breaker như file cũ
       default-filters:
         - name: CircuitBreaker
           args:
@@ -27,17 +31,49 @@ spring:
             fallbackUri: forward:/fallback/unknown
 
       routes:
-        - id: auth-service
-          uri: lb://AUTH-SERVICE
+        # ===== Dummy Echo Service (bổ sung từ file mới) =====
+        - id: dummy-echo-service
+          uri: lb://DUMMY-ECHO-SERVICE
+          predicates:
+            - Path=/api/internal/**
+          filters:
+            - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
+
+        # ===== Auth Service (ưu tiên route mới có rewrite) =====
+        # (thay cho auth-service cũ để không trùng Path)
+        - id: csfc-auth-serviceaa
+          uri: lb://CSFC-AUTH-SERVICE
           predicates:
             - Path=/api/auth/**
+          filters:
+            - RewritePath=/api/auth/(?<segment>.*), /auth/${segment}
 
+        # ===== Franchise Contract Service (bổ sung) =====
+        - id: franchise-contract-service
+          uri: lb://FRANCHISESERVICE
+          predicates:
+            - Path=/api/contracts/**
+          filters:
+            - RewritePath=/api/contracts/(?<segment>.*), /api/contracts/${segment}
+
+        # ===== Metadata Service (bổ sung rewrite + circuitbreaker riêng) =====
         - id: metadata-service
           uri: lb://METADATA-SERVICE
           predicates:
             - Path=/api/metadata/**
+          filters:
+            - RewritePath=/api/metadata/(?<segment>.*), /${segment}
+            - name: CircuitBreaker
+              args:
+                name: metadataCircuitBreaker
+                fallbackUri: forward:/fallback/METADATA-SERVICE
 
-# ── Eureka Client ──────────────────────────────────────────
+# --- JWT secret (bổ sung) ---
+security:
+  jwt:
+    secret: ${JWT_SECRET:V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=}
+
+# ── Eureka Client (giữ env như file cũ, bổ sung hostname/prefer-ip) ──
 eureka:
   client:
     service-url:
@@ -48,7 +84,7 @@ eureka:
     prefer-ip-address: true
     hostname: ${HOSTNAME:localhost}
 
-# ── Rate Limit ─────────────────────────────────────────────
+# ── Rate Limit (giữ env như file cũ) ──
 rate-limit:
   ip:
     enabled: ${RATE_LIMIT_ENABLED:true}
@@ -57,23 +93,23 @@ rate-limit:
     refresh-seconds: 15
     config-key: gateway.ip.rate_limit.per_minute
 
-# ── App info ───────────────────────────────────────────────
+# ── App info (giữ env như file cũ) ──
 app:
   version: ${APP_VERSION:1.0.0}
   slow-request:
     threshold-ms: ${SLOW_REQUEST_THRESHOLD:2000}
 
-# ── Actuator ───────────────────────────────────────────────
+# ── Actuator (merge: thêm circuitbreakers, giữ metrics) ──
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,circuitbreakers
   endpoint:
     health:
       show-details: always
 
-# ── Resilience4j Circuit Breaker ───────────────────────────
+# ── Resilience4j (giữ default + bổ sung metadataCircuitBreaker + timelimiter) ──
 resilience4j:
   circuitbreaker:
     configs:
@@ -82,12 +118,31 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 10000
         permittedNumberOfCallsInHalfOpenState: 3
+
     instances:
       defaultCircuitBreaker:
         baseConfig: default
 
-# ── Logging ────────────────────────────────────────────────
+      metadataCircuitBreaker:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+
+  timelimiter:
+    instances:
+      metadataCircuitBreaker:
+        timeout-duration: 3s
+        cancel-running-future: true
+
+# ── Logging (giữ level cũ + bổ sung pattern mới) ──
 logging:
   level:
     com.group1.apigateway: INFO
     org.springframework.cloud.gateway: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [${spring.application.name:}] [requestId:%X{requestId}] %logger - %msg%n"
