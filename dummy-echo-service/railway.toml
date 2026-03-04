@@ -1,0 +1,23 @@
+# ============================================================
+# railway.toml — Railway deployment config for dummy-echo-service
+# Docs: https://docs.railway.app/reference/config-as-code
+#
+# Deploy steps on Railway:
+# 1. Create a new Service inside your Railway project
+# 2. Point to the dummy-echo-service folder
+# 3. Railway will detect this file automatically
+# 4. Add EUREKA_URL environment variable in Railway dashboard
+# ============================================================
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = ""          # Defined inside Dockerfile ENTRYPOINT
+healthcheckPath = "/internal/echo"
+healthcheckTimeout = 60    # seconds
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+# Railway sets PORT automatically — the app reads ${PORT:8762}

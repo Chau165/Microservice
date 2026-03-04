@@ -65,3 +65,70 @@ services:
         value: "60"
       - key: APP_VERSION
         value: "1.0.0"
+
+  # ── 3. CSFC Auth Service ─────────────────────────────────
+  # NOTE: Render không hỗ trợ SQL Server natively.
+  # Sử dụng Azure SQL hoặc SQL Server ngoài, sau đó set DB_URL trên dashboard.
+  - type: web
+    name: csfc-auth-service
+    runtime: docker
+    dockerfilePath: ./CSFC-auth-service/Dockerfile
+    dockerContext: ./CSFC-auth-service
+    region: singapore
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      # Render tự inject PORT, không cần set cứng
+      - key: DB_URL
+        sync: false   # Điền trên Render Dashboard: jdbc:sqlserver://<host>:1433;databaseName=<db>;encrypt=true;trustServerCertificate=true
+      - key: DB_USERNAME
+        sync: false   # Điền trên Render Dashboard
+      - key: DB_PASSWORD
+        sync: false   # Điền trên Render Dashboard
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false   # Điền trên Render Dashboard
+      - key: MAIL_PASSWORD
+        sync: false   # Điền trên Render Dashboard (dùng Gmail App Password)
+      - key: JWT_SECRET
+        generateValue: true   # Render tự sinh secret ngẫu nhiên
+      - key: JWT_ACCESS_EXPIRATION
+        value: "900000"
+      - key: JWT_REFRESH_EXPIRATION
+        value: "604800000"
+      - key: EUREKA_URL
+        fromService:
+          type: web
+          name: discovery-service
+          envVarKey: RENDER_INTERNAL_URL
+      - key: EUREKA_REGISTER
+        value: "true"
+      - key: EUREKA_FETCH
+        value: "true"
+      - key: JPA_DDL_AUTO
+        value: update
+      - key: JPA_SHOW_SQL
+        value: "false"
+
+  # ── 4. Dummy Echo Service ─────────────────────────────────
+  - type: web
+    name: dummy-echo-service
+    runtime: docker
+    dockerfilePath: ./dummy-echo-service/Dockerfile
+    dockerContext: ./dummy-echo-service
+    region: singapore
+    plan: free
+    healthCheckPath: /internal/echo
+    envVars:
+      - key: EUREKA_URL
+        fromService:
+          type: web
+          name: discovery-service
+          envVarKey: RENDER_INTERNAL_URL
+      - key: EUREKA_REGISTER
+        value: "true"
+      - key: EUREKA_FETCH
+        value: "true"

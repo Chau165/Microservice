@@ -61,6 +61,92 @@ services:
     networks:
       - microservice-net
 
+  # ── SQL Server ────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Admin@12345
+      - MSSQL_PID=Developer
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Admin@12345' -Q 'SELECT 1' -C || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - microservice-net
+
+  # ── CSFC Auth Service ─────────────────────────────────────
+  csfc-auth-service:
+    build:
+      context: ./CSFC-auth-service
+      dockerfile: Dockerfile
+    container_name: csfc-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - DB_URL=jdbc:sqlserver://sqlserver:1433;databaseName=authentication_db;encrypt=true;trustServerCertificate=true
+      - DB_USERNAME=sa
+      - DB_PASSWORD=Admin@12345
+      - MAIL_HOST=smtp.gmail.com
+      - MAIL_PORT=587
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - EUREKA_URL=http://discovery-service:8761/eureka/
+      - EUREKA_REGISTER=true
+      - EUREKA_FETCH=true
+      - JPA_DDL_AUTO=update
+      - JPA_SHOW_SQL=false
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - microservice-net
+
+  # ── Dummy Echo Service ────────────────────────────────────
+  dummy-echo-service:
+    build:
+      context: ./dummy-echo-service
+      dockerfile: Dockerfile
+    container_name: dummy-echo-service
+    ports:
+      - "8762:8762"
+    environment:
+      - PORT=8762
+      - EUREKA_URL=http://discovery-service:8761/eureka/
+      - EUREKA_REGISTER=true
+      - EUREKA_FETCH=true
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8762/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - microservice-net
+
 networks:
   microservice-net:
     driver: bridge
+
+volumes:
+  sqlserver_data:
