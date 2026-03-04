@@ -7,22 +7,33 @@ spring:
     name: csfc-auth-service
 
   datasource:
-    # Railway MySQL — biến env được Railway inject tự động
-    # MYSQLHOST     = ${{RAILWAY_PRIVATE_DOMAIN}}
-    # MYSQLPORT     = 3306
-    # MYSQLUSER     = root
-    # MYSQLPASSWORD = ${{MYSQL_ROOT_PASSWORD}}
-    # MYSQLDATABASE = ${{MYSQL_DATABASE}}
-    url: jdbc:mysql://${MYSQLHOST:${RAILWAY_PRIVATE_DOMAIN:localhost}}:${MYSQLPORT:3306}/${MYSQLDATABASE:${MYSQL_DATABASE:authentication_db}}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
-    username: ${MYSQLUSER:root}
-    password: ${MYSQLPASSWORD:${MYSQL_ROOT_PASSWORD:}}
+    # Railway MySQL — MYSQLHOST và MYSQLDATABASE được Railway inject tự động
+    # MYSQLHOST     = ${{RAILWAY_PRIVATE_DOMAIN}}  (Railway tự inject)
+    # MYSQLDATABASE = ${{MYSQL_DATABASE}}           (Railway tự inject)
+    url: jdbc:mysql://${MYSQLHOST}:3306/${MYSQLDATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: root
+    password: YNfxrjqvPkBMGaPqRTdHteGTJMfxebDn
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      # Không fail khi startup nếu MySQL chưa ready (Railway khởi động song song)
+      initialization-fail-timeout: -1
+      connection-timeout: 60000       # 60s chờ lấy connection từ pool
+      connection-test-query: SELECT 1
+      maximum-pool-size: 5
+      minimum-idle: 1
 
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:update}
     show-sql: ${JPA_SHOW_SQL:false}
     database-platform: org.hibernate.dialect.MySQLDialect
+    # Defer JPA init — cho phép app context boot trước, connect DB sau
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        # Dùng dialect đã cấu hình, không cần query DB để detect
+        temp:
+          use_jdbc_metadata_defaults: false
 
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
@@ -40,11 +51,13 @@ spring:
 
 eureka:
   client:
+    # Tắt Eureka nếu không có Eureka server (Railway không deploy Eureka)
+    # Bật lại bằng cách set EUREKA_ENABLED=true trên Railway nếu cần
+    enabled: ${EUREKA_ENABLED:false}
     service-url:
-      # Set EUREKA_URL in Render/Railway environment variables
       defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
-    register-with-eureka: ${EUREKA_REGISTER:true}
-    fetch-registry: ${EUREKA_FETCH:true}
+    register-with-eureka: ${EUREKA_REGISTER:false}
+    fetch-registry: ${EUREKA_FETCH:false}
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}

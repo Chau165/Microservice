@@ -19,7 +19,7 @@ dockerfilePath = "Dockerfile"
 [deploy]
 startCommand = ""          # Defined inside Dockerfile ENTRYPOINT
 healthcheckPath = "/actuator/health"
-healthcheckTimeout = 60    # seconds
+healthcheckTimeout = 120   # seconds — đủ thời gian để Spring Boot + MySQL connect
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
