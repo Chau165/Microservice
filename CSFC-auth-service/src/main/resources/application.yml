@@ -7,18 +7,18 @@ spring:
     name: csfc-auth-service
 
   datasource:
-    # SQL Server connection — set DB_URL in Render/Railway environment variables
-    # Example: jdbc:sqlserver://<host>:1433;databaseName=<db>;encrypt=true;trustServerCertificate=true
-    url: ${DB_URL:jdbc:sqlserver://localhost:1433;databaseName=authentication_db;encrypt=true;trustServerCertificate=true}
-    username: ${DB_USERNAME:sa}
-    password: ${DB_PASSWORD:12345}
-    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    # Railway MySQL — biến env được Railway inject tự động
+    # JDBC URL: jdbc:mysql://<MYSQLHOST>:<MYSQLPORT>/<MYSQLDATABASE>?...
+    url: jdbc:mysql://${MYSQLHOST:localhost}:${MYSQLPORT:3306}/${MYSQLDATABASE:authentication_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: ${MYSQLUSER:root}
+    password: ${MYSQLPASSWORD:12345}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:update}
     show-sql: ${JPA_SHOW_SQL:false}
-    database-platform: org.hibernate.dialect.SQLServerDialect
+    database-platform: org.hibernate.dialect.MySQLDialect
 
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}

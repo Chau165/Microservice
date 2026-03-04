@@ -149,4 +149,5 @@ networks:
     driver: bridge
 
 volumes:
-  sqlserver_data:
+  mysql_data:
+    # Stores MySQL data across container restarts
