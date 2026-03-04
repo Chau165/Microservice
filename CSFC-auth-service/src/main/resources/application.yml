@@ -13,9 +13,9 @@ spring:
     # MYSQLUSER     = root
     # MYSQLPASSWORD = ${{MYSQL_ROOT_PASSWORD}}
     # MYSQLDATABASE = ${{MYSQL_DATABASE}}
-    url: jdbc:mysql://${MYSQLHOST:localhost}:${MYSQLPORT:3306}/${MYSQLDATABASE:authentication_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    url: jdbc:mysql://${MYSQLHOST:${RAILWAY_PRIVATE_DOMAIN:localhost}}:${MYSQLPORT:3306}/${MYSQLDATABASE:${MYSQL_DATABASE:authentication_db}}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
     username: ${MYSQLUSER:root}
-    password: ${MYSQLPASSWORD}
+    password: ${MYSQLPASSWORD:${MYSQL_ROOT_PASSWORD:}}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
