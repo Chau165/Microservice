@@ -40,7 +40,10 @@ public class SecurityConfig {
                                     "/auth/login",
                                     "/auth/refresh",
                                     "/auth/forgot-password",
-                                    "/auth/reset-password"
+                                    "/auth/reset-password",
+                                    // Railway / Render healthcheck
+                                    "/actuator/health",
+                                    "/actuator/info"
                             ).permitAll()
 
                             .anyRequest().authenticated();

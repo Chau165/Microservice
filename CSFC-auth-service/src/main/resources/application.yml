@@ -54,3 +54,16 @@ jwt:
   secret: ${JWT_SECRET:V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=}
   access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}   # 15 minutes (ms)
   refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days (ms)
+
+# Expose actuator endpoints for Railway/Render healthcheck
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+  health:
+    defaults:
+      enabled: true
