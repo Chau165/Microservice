@@ -48,14 +48,18 @@ eureka:
   client:
     enabled: true
     service-url:
-      defaultZone: https://microservice-6dyb.onrender.com/eureka/
+      defaultZone: https://microservice-6dyb.onrender.com/eureka
     register-with-eureka: true
     fetch-registry: true
+
   instance:
     prefer-ip-address: false
-    instance-id: ${spring.application.name}:${server.port}
+    hostname: microservice-production-b58a.up.railway.app
+    non-secure-port: 80
+    non-secure-port-enabled: true
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
+    instance-id: ${spring.application.name}:${server.port}
 
 jwt:
   secret: V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=
