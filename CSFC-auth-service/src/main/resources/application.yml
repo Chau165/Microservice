@@ -52,8 +52,10 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
   instance:
-    prefer-ip-address: true
+    prefer-ip-address: false
     instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
 
 jwt:
   secret: V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=
