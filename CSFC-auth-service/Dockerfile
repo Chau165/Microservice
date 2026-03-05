@@ -37,9 +37,8 @@ RUN chown appuser:appgroup app.jar
 
 USER appuser
 
-# Render and Railway inject PORT as environment variable
-# Default to 8081 if not set
-EXPOSE 8081
+# Railway injects PORT=8080 as environment variable
+EXPOSE 8080
 
 ENTRYPOINT ["java", \
   "-Djava.security.egd=file:/dev/./urandom", \

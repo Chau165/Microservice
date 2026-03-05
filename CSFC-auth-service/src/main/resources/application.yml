@@ -1,5 +1,5 @@
 server:
-  port: ${PORT:8081}
+  port: ${PORT:8080}
 
 spring:
   application:
@@ -27,9 +27,8 @@ spring:
     defer-datasource-initialization: true
     properties:
       hibernate:
-        # Setting này deprecated, nhưng để nguyên vẫn chạy; warning thôi
-        temp:
-          use_jdbc_metadata_defaults: false
+        boot:
+          allow_jdbc_metadata_access: false
 
   mail:
     host: smtp.gmail.com
@@ -77,14 +76,14 @@ management:
         liveness:
           include: livenessState,ping
         readiness:
-          include: readinessState,db
+          include: readinessState
 
   health:
     defaults:
       enabled: true
-
-    # ✅ FIX CHÍNH: đừng để /actuator/health bị DOWN vì DB/Eureka
     db:
       enabled: false
     discovery:
+      enabled: false
+    mail:
       enabled: false
