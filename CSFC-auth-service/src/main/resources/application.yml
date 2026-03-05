@@ -6,13 +6,12 @@ spring:
     name: csfc-auth-service
 
   datasource:
-    # Railway MySQL (hardcode)
-    url: jdbc:mysql://mysql.railway.internal:3306/railway?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
-    username: root
-    password: jkuIcnzTlPiQfVdyrqaXrBWAoTuXWdnr
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    # Render PostgreSQL (internal hostname - same Render region)
+    url: ${DATABASE_URL:jdbc:postgresql://dpg-d6khipjh46gs73cuc7kg-a/csfc_auth}
+    username: ${DB_USERNAME:csfc_auth_user}
+    password: ${DB_PASSWORD:BMmpo3RuNHzJdvWzTRRW8LV6GxLTrB6U}
+    driver-class-name: org.postgresql.Driver
     hikari:
-      # QUAN TRỌNG: để app fail rõ nếu DB không lên được (đừng treo healthcheck kiểu mập mờ)
       initialization-fail-timeout: 30000
       connection-timeout: 60000
       connection-test-query: SELECT 1
@@ -23,7 +22,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
-    database-platform: org.hibernate.dialect.MySQLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     defer-datasource-initialization: true
     properties:
       hibernate:
@@ -54,7 +53,7 @@ eureka:
 
   instance:
     prefer-ip-address: false
-    hostname: microservice-production-b58a.up.railway.app
+    hostname: ${RENDER_EXTERNAL_HOSTNAME:localhost}
     non-secure-port: 80
     non-secure-port-enabled: true
     lease-renewal-interval-in-seconds: 10

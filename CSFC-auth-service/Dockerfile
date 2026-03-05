@@ -37,7 +37,7 @@ RUN chown appuser:appgroup app.jar
 
 USER appuser
 
-# Railway injects PORT=8080 as environment variable
+# Render injects PORT as environment variable (default 8080)
 EXPOSE 8080
 
 ENTRYPOINT ["java", \
