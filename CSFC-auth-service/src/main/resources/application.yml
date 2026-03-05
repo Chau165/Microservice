@@ -12,7 +12,8 @@ spring:
     password: jkuIcnzTlPiQfVdyrqaXrBWAoTuXWdnr
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      initialization-fail-timeout: -1
+      # QUAN TRỌNG: để app fail rõ nếu DB không lên được (đừng treo healthcheck kiểu mập mờ)
+      initialization-fail-timeout: 30000
       connection-timeout: 60000
       connection-test-query: SELECT 1
       maximum-pool-size: 5
@@ -26,6 +27,7 @@ spring:
     defer-datasource-initialization: true
     properties:
       hibernate:
+        # Setting này deprecated, nhưng để nguyên vẫn chạy; warning thôi
         temp:
           use_jdbc_metadata_defaults: false
 
@@ -64,9 +66,25 @@ management:
     web:
       exposure:
         include: health,info
+
   endpoint:
     health:
       show-details: never
+      # Bật probe để sau này nếu bạn đổi healthcheck qua readiness/liveness thì sẵn
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState,ping
+        readiness:
+          include: readinessState,db
+
   health:
     defaults:
       enabled: true
+
+    # ✅ FIX CHÍNH: đừng để /actuator/health bị DOWN vì DB/Eureka
+    db:
+      enabled: false
+    discovery:
+      enabled: false
