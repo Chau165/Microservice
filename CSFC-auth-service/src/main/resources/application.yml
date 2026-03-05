@@ -1,4 +1,3 @@
-# Render and Railway inject PORT automatically
 server:
   port: ${PORT:8081}
 
@@ -7,39 +6,34 @@ spring:
     name: csfc-auth-service
 
   datasource:
-    # Railway MySQL — MYSQLHOST và MYSQLDATABASE được Railway inject tự động
-    # MYSQLHOST     = ${{RAILWAY_PRIVATE_DOMAIN}}  (Railway tự inject)
-    # MYSQLDATABASE = ${{MYSQL_DATABASE}}           (Railway tự inject)
-    url: jdbc:mysql://${MYSQLHOST}:3306/${MYSQLDATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    # Railway MySQL (hardcode)
+    url: jdbc:mysql://mysql.railway.internal:3306/railway?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
     username: root
-    password: YNfxrjqvPkBMGaPqRTdHteGTJMfxebDn
+    password: jkuIcnzTlPiQfVdyrqaXrBWAoTuXWdnr
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      # Không fail khi startup nếu MySQL chưa ready (Railway khởi động song song)
       initialization-fail-timeout: -1
-      connection-timeout: 60000       # 60s chờ lấy connection từ pool
+      connection-timeout: 60000
       connection-test-query: SELECT 1
       maximum-pool-size: 5
       minimum-idle: 1
 
   jpa:
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:update}
-    show-sql: ${JPA_SHOW_SQL:false}
+      ddl-auto: update
+    show-sql: false
     database-platform: org.hibernate.dialect.MySQLDialect
-    # Defer JPA init — cho phép app context boot trước, connect DB sau
     defer-datasource-initialization: true
     properties:
       hibernate:
-        # Dùng dialect đã cấu hình, không cần query DB để detect
         temp:
           use_jdbc_metadata_defaults: false
 
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:tuldse184668@fpt.edu.vn}
-    password: ${MAIL_PASSWORD:fryzapjrxznpmkyc}
+    host: smtp.gmail.com
+    port: 587
+    username: tuldse184668@fpt.edu.vn
+    password: fryzapjrxznpmkyc
     properties:
       mail:
         smtp:
@@ -51,24 +45,20 @@ spring:
 
 eureka:
   client:
-    # Tắt Eureka nếu không có Eureka server (Railway không deploy Eureka)
-    # Bật lại bằng cách set EUREKA_ENABLED=true trên Railway nếu cần
-    enabled: ${EUREKA_ENABLED:false}
+    enabled: false
     service-url:
-      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
-    register-with-eureka: ${EUREKA_REGISTER:false}
-    fetch-registry: ${EUREKA_FETCH:false}
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: false
+    fetch-registry: false
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
 
 jwt:
-  # Set JWT_SECRET in Render/Railway environment variables — use a strong random base64 string
-  secret: ${JWT_SECRET:V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=}
-  access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}   # 15 minutes (ms)
-  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days (ms)
+  secret: V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=
+  access-token-expiration: 900000
+  refresh-token-expiration: 604800000
 
-# Expose actuator endpoints for Railway/Render healthcheck
 management:
   endpoints:
     web:
