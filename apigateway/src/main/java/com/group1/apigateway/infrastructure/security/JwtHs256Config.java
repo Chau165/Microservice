@@ -1,5 +1,6 @@
 package com.group1.apigateway.infrastructure.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +12,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
+@Slf4j
 @Configuration
 public class JwtHs256Config {
 
@@ -25,6 +27,12 @@ public class JwtHs256Config {
 
         byte[] keyBytes = Base64.getDecoder().decode(secret);
         SecretKey key = new SecretKeySpec(keyBytes, "HmacSHA256");
+
+        // DEBUG: log first 6 chars and key length to verify secret is loaded correctly
+        log.info("[JWT] Secret prefix={}..., base64Length={}, keyBytes={}",
+                secret.substring(0, Math.min(6, secret.length())),
+                secret.length(),
+                keyBytes.length);
 
         return NimbusReactiveJwtDecoder
                 .withSecretKey(key)
