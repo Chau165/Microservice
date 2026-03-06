@@ -1,19 +1,43 @@
 package com.group1.apigateway.infrastructure.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
-import reactor.core.publisher.Mono;
+
+import java.security.KeyFactory;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 @Configuration
 public class SecurityConfig {
+
+    @Value("${security.jwt.public-key}")
+    private String publicKeyString;
+
+    @Bean
+    public ReactiveJwtDecoder jwtDecoder() throws Exception {
+
+        String key = publicKeyString
+                .replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "")
+                .replaceAll("\\s+", "");
+
+        byte[] keyBytes = Base64.getDecoder().decode(key);
+
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        RSAPublicKey rsaPublicKey = (RSAPublicKey) keyFactory.generatePublic(spec);
+
+        return NimbusReactiveJwtDecoder.withPublicKey(rsaPublicKey).build();
+    }
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(
@@ -21,39 +45,33 @@ public class SecurityConfig {
             ServerAuthenticationEntryPoint authenticationEntryPoint,
             ServerAccessDeniedHandler accessDeniedHandler,
             InternalHeaderInjectionWebFilter internalHeaderInjectionWebFilter,
-            IpRateLimitWebFilter ipRateLimitWebFilter,
-            Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter
+            IpRateLimitWebFilter ipRateLimitWebFilter
     ) {
+
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
+
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(authenticationEntryPoint) // 401 JSON
-                        .accessDeniedHandler(accessDeniedHandler)           // 403 JSON
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
+
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/actuator/**").permitAll()
-
-                        // Echo public để test routing (không cần token)
-                        .pathMatchers("/api/internal/echo/**").authenticated()
-
                         .pathMatchers("/api/auth/**").permitAll()
-                        // Các API còn lại dưới /api/** bắt buộc phải có JWT hợp lệ
+                        .pathMatchers("/api/internal/echo/**").authenticated()
                         .pathMatchers("/api/**").authenticated()
-
                         .anyExchange().permitAll()
                 )
-                // JWT validation via HS256 shared-secret (khớp với AUTH-SERVICE):
-                // - đọc Authorization: Bearer <token>
-                // - verify signature bằng secret key HS256
-                // - check expiration (exp) tự động
+
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .authenticationEntryPoint(authenticationEntryPoint)
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
-                // Rate limit chạy trước AUTHENTICATION => works without JWT
-                .addFilterAt(ipRateLimitWebFilter, SecurityWebFiltersOrder.FIRST)
+                        .jwt(jwt -> {})
+                )
 
-                // Inject internal headers sau AUTHENTICATION
+                .addFilterAt(ipRateLimitWebFilter, SecurityWebFiltersOrder.FIRST)
                 .addFilterAfter(internalHeaderInjectionWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+
                 .build();
     }
 }

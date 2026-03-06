@@ -6,7 +6,6 @@ server:
 
 spring:
   application:
-    # Giữ theo file cũ (đang deploy). Nếu bạn muốn tên "ApiGateway" thì đổi ở đây.
     name: api-gateway
 
   profiles:
@@ -17,13 +16,11 @@ spring:
 
   cloud:
     gateway:
-      # Giữ locator như file cũ
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
 
-      # Giữ default circuit breaker như file cũ
       default-filters:
         - name: CircuitBreaker
           args:
@@ -31,7 +28,6 @@ spring:
             fallbackUri: forward:/fallback/unknown
 
       routes:
-        # ===== Dummy Echo Service (bổ sung từ file mới) =====
         - id: dummy-echo-service
           uri: lb://DUMMY-ECHO-SERVICE
           predicates:
@@ -39,16 +35,13 @@ spring:
           filters:
             - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
 
-        # ===== Auth Service (ưu tiên route mới có rewrite) =====
-        # (thay cho auth-service cũ để không trùng Path)
         - id: csfc-auth-serviceaa
           uri: lb://CSFC-AUTH-SERVICE
           predicates:
-            - Path=/api/auth/**
+            - Path=/api/auth-service/**
           filters:
-            - RewritePath=/api/auth/(?<segment>.*), /auth/${segment}
+            - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
 
-        # ===== Franchise Contract Service (bổ sung) =====
         - id: franchise-contract-service
           uri: lb://FRANCHISESERVICE
           predicates:
@@ -56,7 +49,6 @@ spring:
           filters:
             - RewritePath=/api/contracts/(?<segment>.*), /api/contracts/${segment}
 
-        # ===== Metadata Service (bổ sung rewrite + circuitbreaker riêng) =====
         - id: metadata-service
           uri: lb://METADATA-SERVICE
           predicates:
@@ -68,12 +60,12 @@ spring:
                 name: metadataCircuitBreaker
                 fallbackUri: forward:/fallback/METADATA-SERVICE
 
-# --- JWT secret ---
+# --- JWT RS256 public key ---
 security:
   jwt:
-    secret: V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=
+    public-key: ${JWT_PUBLIC_KEY:MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx9kqCNTmQc3NKpkTizMn6N4X4AuHUqFhtPzoHccV6MiNnsD7UGsiYPp/Ifn/4TqqnJFhSI/a+UhtWY2zhOcToeekEx/hCcgTUeKBwFuhWlXKjvR5Ao7Qezkf86DQ3GsM1k+vKOQ26Mfa8iksmGlIYotL/ALAPKdwsVq9f95L1iDFB7/CUTSEfOhD0WdUkmLae/Ta/sHa0qz4ZdoN/dKvqkepNk1P1hGM86YBvCLca72wRtJe7BsoF+oz2CQ73x+1Xc/6MZ8jProFO4L8BBU6fJzWX/sXDSgjU8nt8Y1tClzhlB60MUtjaXFAyq8ltpiS2OGK2zSZnNjkQ83lKxyC0QIDAQAB}
 
-# ── Eureka Client (giữ env như file cũ, bổ sung hostname/prefer-ip) ──
+# --- Eureka Client ---
 eureka:
   client:
     service-url:
@@ -84,7 +76,7 @@ eureka:
     prefer-ip-address: true
     hostname: ${HOSTNAME:localhost}
 
-# ── Rate Limit (giữ env như file cũ) ──
+# --- Rate Limit ---
 rate-limit:
   ip:
     enabled: ${RATE_LIMIT_ENABLED:true}
@@ -93,13 +85,13 @@ rate-limit:
     refresh-seconds: 15
     config-key: gateway.ip.rate_limit.per_minute
 
-# ── App info (giữ env như file cũ) ──
+# --- App info ---
 app:
   version: ${APP_VERSION:1.0.0}
   slow-request:
     threshold-ms: ${SLOW_REQUEST_THRESHOLD:2000}
 
-# ── Actuator (merge: thêm circuitbreakers, giữ metrics) ──
+# --- Actuator ---
 management:
   endpoints:
     web:
@@ -109,7 +101,7 @@ management:
     health:
       show-details: always
 
-# ── Resilience4j (giữ default + bổ sung metadataCircuitBreaker + timelimiter) ──
+# --- Resilience4j ---
 resilience4j:
   circuitbreaker:
     configs:
@@ -139,7 +131,7 @@ resilience4j:
         timeout-duration: 3s
         cancel-running-future: true
 
-# ── Logging (giữ level cũ + bổ sung pattern mới) ──
+# --- Logging ---
 logging:
   level:
     com.group1.apigateway: INFO
