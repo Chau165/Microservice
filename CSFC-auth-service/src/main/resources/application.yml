@@ -61,7 +61,13 @@ eureka:
     instance-id: ${spring.application.name}:${server.port}
 
 jwt:
-  secret: V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=
+  public-key: |
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx9kqCNTmQc3NKpkTizMn6N4X4AuHUqFhtPzoHccV6MiNnsD7UGsiYPp/Ifn/4TqqnJFhSI/a+UhtWY2zhOcToeekEx/hCcgTUeKBwFuhWlXKjvR5Ao7Qezkf86DQ3GsM1k+vKOQ26Mfa8iksmGlIYotL/ALAPKdwsVq9f95L1iDFB7/CUTSEfOhD0WdUkmLae/Ta/sHa0qz4ZdoN/dKvqkepNk1P1hGM86YBvCLca72wRtJe7BsoF+oz2CQ73x+1Xc/6MZ8jProFO4L8BBU6fJzWX/sXDSgjU8nt8Y1tClzhlB60MUtjaXFAyq8ltpiS2OGK2zSZnNjkQ83lKxyC0QIDAQAB
+
+
+  private-key: |
+    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDH2SoI1OZBzc0qmROLMyfo3hfgC4dSoWG0/OgdxxXoyI2ewPtQayJg+n8h+f/hOqqckWFIj9r5SG1ZjbOE5xOh56QTH+EJyBNR4oHAW6FaVcqO9HkCjtB7OR/zoNDcawzWT68o5Dbox9ryKSyYaUhii0v8AsA8p3CxWr1/3kvWIMUHv8JRNIR86EPRZ1SSYtp79Nr+wdrSrPhl2g390q+qR6k2TU/WEYzzpgG8ItxrvbBG0l7sGygX6jPYJDvfH7Vdz/oxnyM+ugU7gvwEFTp8nNZf+xcNKCNTye3xjW0KXOGUHrQxS2NpcUDKryW2mJLY4YrbNJmc2ORDzeUrHILRAgMBAAECggEAGrYQc7i9A+uVcg2eupq+SVYx+7yevDEcxZuODLjY2VHA+AiULpX7NNoWVvy6sihsuFuIFLJBktMW5oLVjTxzd87ls7atleibiHTNYd/9a30PA1dyuyBKhkXG2wHSGLvoLdbdswn5uthHj9loAAEGb0FuCQN3HURGADaAIJCeM0LWHxvI+XAmkEWfIyyT8uICxPofpCTsyTSucMo0yFFc8VFXutH+IvsetYoxb5miWH0UbteEjnX0kmKne3V5w5yPT0brN7DMJzzi7L1u9FssliAjNtZpuxZ1R345k0Kd0ix5+notNehBEDv9zNa3/L2ZYLeZH+UPAXCt0UpxPLazLwKBgQD+qPPdUgBxUjJwvUjVKkGS0D2dZxi/ve+uNOp9Ftg7kt6ljZXBVUyMqXIv5XTUY9H5qWfhjYhzp+Qc19PaPuhde+QHOqGgFkkNJlcsnamRv4GmBNzK+7AhXCLySJcG7J0Kja6+okPek2fFLpYemRqHsH1XMsFhGmuI3bc+QpSnFwKBgQDI5mA5xfY4H+fy4b4qySUaon+QDwejLhBujGR3LuXXik00dfIrYsMcTDjJ6PGSqHkFP4fg/CB9sD1yV4nYu0E9B3R9iK2zybw0hGSAdCrWvs8xYSoO8XneDQBWdrunR8gMPvgopGxkKZOHMB+5uj2GaB49o4FxGsJdwJeMwvpWVwKBgQD6P+k1KmoI8i9jHn8+CsJZlY2W6kMl2W55EMMFnbdsA44LvjDVxg7tg24UpzXBqT4kS1csDTtz/B5sQaOMKpmJlD+m4vUFLiEnbO/phh2mfjzXepvGVMLmZXZqBO90/HvubQC1kRuE0/H7kSYwd1/cy5DAab4iwCXAX7C83AzcjQKBgFN7L6cyNMNTts29sokS9oEf30Qcir7rKFbXrfO8oDO1u6k+DbirnIoIvlxgmOmpakidArih7FpuPsphx90wysYyb9yuTAf2n2dvUFf0bcy4k15gktqMy2hTHL3RLt8vO9ii3fn9gTEJ+czmWXiTBHfykgZpCCPYy8Wrfw42A1KXAoGAS9OGBwxwT2n93OBkDSy2XRmVv4rYOL9prfqmCd+yla8GbTXmjekTm+RqrWE/D1k/81Irri3y3Cbj0i+4X7Yro0zFEprX5CdrPra49D4ObkDgdefyaQFSrYS5K/Y2eBn/sD/SE8RbbbpWyKnWHbT0ESS5lNZPLyIfkKgl6uILg5I=
+
   access-token-expiration: 900000
   refresh-token-expiration: 604800000
 
@@ -74,7 +80,6 @@ management:
   endpoint:
     health:
       show-details: never
-      # Bật probe để sau này nếu bạn đổi healthcheck qua readiness/liveness thì sẵn
       probes:
         enabled: true
       group:

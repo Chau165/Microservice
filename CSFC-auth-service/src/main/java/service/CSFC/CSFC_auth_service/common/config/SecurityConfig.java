@@ -1,6 +1,7 @@
 package service.CSFC.CSFC_auth_service.common.config;
 
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,11 +17,13 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import service.CSFC.CSFC_auth_service.common.security.AuthorizationFilter;
 import service.CSFC.CSFC_auth_service.common.security.CustomerUserDetailsService;
+import service.CSFC.CSFC_auth_service.common.security.JwtProperties;
 
 import java.util.List;
 
 @EnableMethodSecurity
 @Configuration
+@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
     @Bean
@@ -40,10 +43,7 @@ public class SecurityConfig {
                                     "/auth/login",
                                     "/auth/refresh",
                                     "/auth/forgot-password",
-                                    "/auth/reset-password",
-                                    // Railway / Render healthcheck
-                                    "/actuator/health",
-                                    "/actuator/info"
+                                    "/auth/reset-password"
                             ).permitAll()
 
                             .anyRequest().authenticated();
