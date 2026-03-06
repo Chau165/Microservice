@@ -68,10 +68,10 @@ spring:
                 name: metadataCircuitBreaker
                 fallbackUri: forward:/fallback/METADATA-SERVICE
 
-# --- JWT secret (bổ sung) ---
+# --- JWT secret ---
 security:
   jwt:
-    secret: ${JWT_SECRET:V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=}
+    secret: V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=
 
 # ── Eureka Client (giữ env như file cũ, bổ sung hostname/prefer-ip) ──
 eureka:
