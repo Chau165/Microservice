@@ -19,8 +19,6 @@ import service.CSFC.CSFC_auth_service.service.UserService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/auth-service/auth")
-
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;

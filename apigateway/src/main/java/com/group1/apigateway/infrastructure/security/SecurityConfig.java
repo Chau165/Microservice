@@ -3,6 +3,7 @@ package com.group1.apigateway.infrastructure.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
@@ -10,6 +11,7 @@ import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
+import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
 
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPublicKey;
@@ -39,8 +41,31 @@ public class SecurityConfig {
         return NimbusReactiveJwtDecoder.withPublicKey(rsaPublicKey).build();
     }
 
+    /**
+     * Public chain: handles /api/auth-service/** WITHOUT JWT validation.
+     * Prevents oauth2ResourceServer from rejecting requests with invalid/expired tokens
+     * on public auth endpoints (e.g. login with a cached bad token in the client).
+     */
     @Bean
-    public SecurityWebFilterChain springSecurityFilterChain(
+    @Order(1)
+    public SecurityWebFilterChain publicFilterChain(
+            ServerHttpSecurity http,
+            IpRateLimitWebFilter ipRateLimitWebFilter
+    ) {
+        return http
+                .securityMatcher(new PathPatternParserServerWebExchangeMatcher("/api/auth-service/**"))
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(ex -> ex.anyExchange().permitAll())
+                .addFilterAt(ipRateLimitWebFilter, SecurityWebFiltersOrder.FIRST)
+                .build();
+    }
+
+    /**
+     * Secured chain: handles all other paths, requires valid JWT for protected endpoints.
+     */
+    @Bean
+    @Order(2)
+    public SecurityWebFilterChain securedFilterChain(
             ServerHttpSecurity http,
             ServerAuthenticationEntryPoint authenticationEntryPoint,
             ServerAccessDeniedHandler accessDeniedHandler,
@@ -58,7 +83,6 @@ public class SecurityConfig {
 
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/actuator/**").permitAll()
-                        .pathMatchers("/api/auth-service/**").permitAll()
                         .pathMatchers("/api/internal/echo/**").authenticated()
                         .pathMatchers("/api/**").authenticated()
                         .anyExchange().permitAll()

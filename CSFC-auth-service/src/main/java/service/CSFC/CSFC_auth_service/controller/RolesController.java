@@ -11,7 +11,7 @@ import service.CSFC.CSFC_auth_service.model.dto.response.RolesResponse;
 import service.CSFC.CSFC_auth_service.service.RolesService;
 
 @RestController
-@RequestMapping("/api/auth-service/roles")
+@RequestMapping("/roles")
 @RequiredArgsConstructor
 public class RolesController {
 

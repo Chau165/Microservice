@@ -39,11 +39,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(request -> {
                     request.requestMatchers(
-                                    "/auth/register",
-                                    "/auth/login",
-                                    "/auth/refresh",
-                                    "/auth/forgot-password",
-                                    "/auth/reset-password"
+                                    "/register",
+                                    "/login",
+                                    "/refresh",
+                                    "/forgot-password",
+                                    "/reset-password"
                             ).permitAll()
 
                             .anyRequest().authenticated();
