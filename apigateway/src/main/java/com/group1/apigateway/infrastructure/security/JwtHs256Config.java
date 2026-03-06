@@ -23,8 +23,7 @@ public class JwtHs256Config {
     public ReactiveJwtDecoder reactiveJwtDecoder(
             @Value("${security.jwt.secret}") String secret) {
 
-        byte[] keyBytes = Base64.getDecoder().decode(secret);
-        SecretKey key = new SecretKeySpec(keyBytes, "HmacSHA256");
+        SecretKey key = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
 
         return NimbusReactiveJwtDecoder
                 .withSecretKey(key)
