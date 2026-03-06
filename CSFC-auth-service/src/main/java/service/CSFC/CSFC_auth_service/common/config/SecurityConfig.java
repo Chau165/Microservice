@@ -39,11 +39,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(request -> {
                     request.requestMatchers(
-                                    "/register",
-                                    "/login",
-                                    "/refresh",
-                                    "/forgot-password",
-                                    "/reset-password"
+                                    "/api/auth-service/register",
+                                    "/api/auth-service/login",
+                                    "/api/auth-service/refresh",
+                                    "/api/auth-service/forgot-password",
+                                    "/api/auth-service/reset-password"
                             ).permitAll()
 
                             .anyRequest().authenticated();
@@ -68,7 +68,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Cho phép Frontend ở cổng 5173 truy cập
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://microservice-1-7foh.onrender.com"));
         // Cho phép các HTTP method này
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         // Cho phép các header cần thiết

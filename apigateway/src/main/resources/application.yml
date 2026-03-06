@@ -40,7 +40,7 @@ spring:
           predicates:
             - Path=/api/auth-service/**
           filters:
-            - RewritePath=/api/auth-service/(?<segment>.*), /${segment}
+            - RewritePath=/api/auth-service/(?<segment>.*), /api/auth-service/${segment}
 
         - id: franchise-contract-service
           uri: lb://FRANCHISESERVICE

@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/admin-permission/roles")
+@RequestMapping("/api/auth-service/admin-permission/roles")
 public class AdminPermissionsController {
 
     private final AdminPermissionsService adminPermissionsService;

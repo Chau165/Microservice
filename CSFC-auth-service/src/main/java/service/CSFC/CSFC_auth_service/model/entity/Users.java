@@ -25,6 +25,7 @@ public class Users {
     private Boolean isFirstLogin;
     private Boolean isActive;
     @JsonIgnore
+    @Column(columnDefinition = "TEXT")
     private String refreshToken;
     @ManyToOne
     @JoinColumn(name = "id_role")
