@@ -42,6 +42,7 @@ spring:
           filters:
             - RewritePath=/api/auth-service/(?<segment>.*), /api/auth-service/${segment}
 
+        #Franchise-service
         - id: franchise-contract-service
           uri: lb://FRANCHISESERVICE
           predicates:
@@ -49,6 +50,23 @@ spring:
           filters:
             - RewritePath=/api/contracts/(?<segment>.*), /api/contracts/${segment}
 
+        # Engagement Service
+        - id: engagement-service
+          uri: lb://ENGAGEMENT-SERVICE
+          predicates:
+            - Path=/api/engagement-service/**
+          filters:
+            - RewritePath=/api/engagement-service/(?<segment>.*), /api/engagement-service/${segment}
+
+        # Warehouse Service
+        - id: warehouse-service
+          uri: lb://WAREHOUSE-SERVICE
+          predicates:
+            - Path=/api/warehouse-service/**
+          filters:
+            - RewritePath=/api/warehouse-service/(?<segment>.*), /api/warehouse-service/${segment}
+
+        #Metadata
         - id: metadata-service
           uri: lb://METADATA-SERVICE
           predicates:

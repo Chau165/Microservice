@@ -1,0 +1,36 @@
+server:
+  port: 8084
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: warehouse-service
+
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=warehouseDB;encrypt=true;trustServerCertificate=true
+    username: sa
+    password: 12345
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServerDialect
+
+aws:
+  region: ap-southeast-1
+  s3:
+    bucket-name: warehousefr
+
+eureka:
+  client:
+    service-url:
+      defaultZone: https://microservice-6dyb.onrender.com/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
