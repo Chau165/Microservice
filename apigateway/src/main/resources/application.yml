@@ -21,6 +21,8 @@ spring:
           enabled: true
           lower-case-service-id: true
 
+      # Tạm bỏ default-filters CircuitBreaker để debug rõ lỗi thật của auth-service
+      # Khi chạy ổn rồi hãy bật lại
       default-filters:
         - name: CircuitBreaker
           args:
@@ -35,14 +37,15 @@ spring:
           filters:
             - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
 
-        - id: csfc-auth-serviceaa
+        - id: csfc-auth-service
           uri: lb://CSFC-AUTH-SERVICE
           predicates:
             - Path=/api/auth-service/**
           filters:
+            # Giữ nguyên như hiện tại.
+            # Nếu AuthController của bạn thực tế là /api/auth/** thì phải đổi dòng này.
             - RewritePath=/api/auth-service/(?<segment>.*), /api/auth-service/${segment}
 
-        #Franchise-service
         - id: franchise-contract-service
           uri: lb://FRANCHISESERVICE
           predicates:
@@ -50,7 +53,6 @@ spring:
           filters:
             - RewritePath=/api/contracts/(?<segment>.*), /api/contracts/${segment}
 
-        # Engagement Service
         - id: engagement-service
           uri: lb://ENGAGEMENT-SERVICE
           predicates:
@@ -58,7 +60,6 @@ spring:
           filters:
             - RewritePath=/api/engagement-service/(?<segment>.*), /api/engagement-service/${segment}
 
-        # Warehouse Service
         - id: warehouse-service
           uri: lb://WAREHOUSE-SERVICE
           predicates:
@@ -66,7 +67,6 @@ spring:
           filters:
             - RewritePath=/api/warehouse-service/(?<segment>.*), /api/warehouse-service/${segment}
 
-        #Metadata
         - id: metadata-service
           uri: lb://METADATA-SERVICE
           predicates:
@@ -78,23 +78,27 @@ spring:
                 name: metadataCircuitBreaker
                 fallbackUri: forward:/fallback/METADATA-SERVICE
 
-# --- JWT RS256 public key ---
 security:
   jwt:
     public-key: ${JWT_PUBLIC_KEY:MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx9kqCNTmQc3NKpkTizMn6N4X4AuHUqFhtPzoHccV6MiNnsD7UGsiYPp/Ifn/4TqqnJFhSI/a+UhtWY2zhOcToeekEx/hCcgTUeKBwFuhWlXKjvR5Ao7Qezkf86DQ3GsM1k+vKOQ26Mfa8iksmGlIYotL/ALAPKdwsVq9f95L1iDFB7/CUTSEfOhD0WdUkmLae/Ta/sHa0qz4ZdoN/dKvqkepNk1P1hGM86YBvCLca72wRtJe7BsoF+oz2CQ73x+1Xc/6MZ8jProFO4L8BBU6fJzWX/sXDSgjU8nt8Y1tClzhlB60MUtjaXFAyq8ltpiS2OGK2zSZnNjkQ83lKxyC0QIDAQAB}
 
-# --- Eureka Client ---
 eureka:
   client:
+    enabled: true
     service-url:
-      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+      defaultZone: ${EUREKA_URL:https://microservice-6dyb.onrender.com/eureka/}
     register-with-eureka: true
     fetch-registry: true
-  instance:
-    prefer-ip-address: true
-    hostname: ${HOSTNAME:localhost}
+    healthcheck:
+      enabled: true
 
-# --- Rate Limit ---
+  instance:
+    prefer-ip-address: false
+    hostname: ${RENDER_EXTERNAL_HOSTNAME:${HOSTNAME:localhost}}
+    non-secure-port: ${server.port}
+    non-secure-port-enabled: true
+    instance-id: ${spring.application.name}:${server.port}
+
 rate-limit:
   ip:
     enabled: ${RATE_LIMIT_ENABLED:true}
@@ -103,23 +107,20 @@ rate-limit:
     refresh-seconds: 15
     config-key: gateway.ip.rate_limit.per_minute
 
-# --- App info ---
 app:
   version: ${APP_VERSION:1.0.0}
   slow-request:
     threshold-ms: ${SLOW_REQUEST_THRESHOLD:2000}
 
-# --- Actuator ---
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,circuitbreakers
+        include: health,info,metrics,circuitbreakers,gateway
   endpoint:
     health:
       show-details: always
 
-# --- Resilience4j ---
 resilience4j:
   circuitbreaker:
     configs:
@@ -149,10 +150,13 @@ resilience4j:
         timeout-duration: 3s
         cancel-running-future: true
 
-# --- Logging ---
 logging:
   level:
-    com.group1.apigateway: INFO
-    org.springframework.cloud.gateway: INFO
+    com.group1.apigateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.loadbalancer: DEBUG
+    com.netflix.discovery: DEBUG
+    org.springframework.cloud.netflix.eureka: DEBUG
+    reactor.netty.http.client: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [${spring.application.name:}] [requestId:%X{requestId}] %logger - %msg%n"
