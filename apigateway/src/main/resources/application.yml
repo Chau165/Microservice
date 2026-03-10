@@ -67,6 +67,13 @@ spring:
           filters:
             - RewritePath=/api/warehouse-service/(?<segment>.*), /api/warehouse-service/${segment}
 
+        - id: shift-service
+          uri: lb://SHIFT-SERVICE
+          predicates:
+            - Path=/api/shift-service/**
+          filters:
+            - RewritePath=/api/shift-service/(?<segment>.*), /api/shift-service/${segment}
+
         - id: metadata-service
           uri: lb://METADATA-SERVICE
           predicates:
