@@ -54,11 +54,17 @@ eureka:
   instance:
     prefer-ip-address: false
     hostname: ${RENDER_EXTERNAL_HOSTNAME:localhost}
-    non-secure-port: ${server.port}
-    non-secure-port-enabled: true
+    # Render chỉ expose HTTPS port 443 ra ngoài, KHÔNG expose port 8080
+    # Nếu đăng ký non-secure-port 8080, gateway sẽ cố gọi http://hostname:8080 -> thất bại
+    secure-port: 443
+    secure-port-enabled: true
+    non-secure-port-enabled: false
+    status-page-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/actuator/info
+    health-check-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/actuator/health
+    home-page-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
-    instance-id: ${spring.application.name}:${server.port}
+    instance-id: ${spring.application.name}:443
 
 jwt:
   public-key: |
