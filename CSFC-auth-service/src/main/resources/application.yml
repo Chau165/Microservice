@@ -47,14 +47,14 @@ eureka:
   client:
     enabled: true
     service-url:
-      defaultZone: https://microservice-6dyb.onrender.com/eureka
+      defaultZone: https://microservice-6dyb.onrender.com/eureka/
     register-with-eureka: true
     fetch-registry: true
 
   instance:
     prefer-ip-address: false
     hostname: ${RENDER_EXTERNAL_HOSTNAME:localhost}
-    non-secure-port: 80
+    non-secure-port: ${server.port}
     non-secure-port-enabled: true
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
