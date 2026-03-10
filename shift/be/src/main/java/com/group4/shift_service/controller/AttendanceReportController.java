@@ -18,7 +18,7 @@ import java.time.ZoneId;
 import java.util.List;
 
 @RestController
-@RequestMapping("/attendance-reports") // Đường dẫn gốc
+@RequestMapping("/api/shift-service/attendance-reports") // Đường dẫn gốc
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AttendanceReportController {

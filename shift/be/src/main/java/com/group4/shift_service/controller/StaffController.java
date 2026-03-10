@@ -11,7 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/staffs")
+@RequestMapping("/api/shift-service/staffs")
 @RequiredArgsConstructor
 public class StaffController {
     private final StaffService staffService;
