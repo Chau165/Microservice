@@ -20,7 +20,7 @@ public class GlobalFallbackController {
     @Value("${app.version:1.0.0}")
     private String version;
 
-    @GetMapping("/{targetService}")
+    @RequestMapping("/{targetService}")
     public ResponseEntity<ApiResponse<Void>> fallback(
             @PathVariable String targetService,
             ServerHttpRequest request) {
