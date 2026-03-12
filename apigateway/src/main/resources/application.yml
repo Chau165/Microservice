@@ -30,8 +30,8 @@ spring:
             fallbackUri: forward:/fallback/unknown
 
       routes:
-        - id: dummy-echo-service
-          uri: lb://DUMMY-ECHO-SERVICE
+        - id: internal-to-metadata
+          uri: lb://METADATA-SERVICE
           predicates:
             - Path=/api/internal/**
           filters:

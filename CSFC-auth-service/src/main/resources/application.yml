@@ -66,6 +66,11 @@ eureka:
     lease-expiration-duration-in-seconds: 30
     instance-id: ${spring.application.name}:443
 
+internal:
+  services:
+    # metadataservice chứa cả Shift lẫn Metadata/Franchise trong cùng 1 app (port 8763)
+    metadata-service: ${METADATA_SERVICE_URL:http://localhost:8763}
+
 jwt:
   public-key: |
     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx9kqCNTmQc3NKpkTizMn6N4X4AuHUqFhtPzoHccV6MiNnsD7UGsiYPp/Ifn/4TqqnJFhSI/a+UhtWY2zhOcToeekEx/hCcgTUeKBwFuhWlXKjvR5Ao7Qezkf86DQ3GsM1k+vKOQ26Mfa8iksmGlIYotL/ALAPKdwsVq9f95L1iDFB7/CUTSEfOhD0WdUkmLae/Ta/sHa0qz4ZdoN/dKvqkepNk1P1hGM86YBvCLca72wRtJe7BsoF+oz2CQ73x+1Xc/6MZ8jProFO4L8BBU6fJzWX/sXDSgjU8nt8Y1tClzhlB60MUtjaXFAyq8ltpiS2OGK2zSZnNjkQ83lKxyC0QIDAQAB
