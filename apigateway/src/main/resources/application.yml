@@ -80,6 +80,13 @@ spring:
             - Path=/api/metadata/**
           filters:
             - RewritePath=/api/metadata/(?<segment>.*), /${segment}
+
+        - id: franchise-service
+          uri: lb://METADATA-SERVICE
+          predicates:
+            - Path=/api/franchise-service/**
+          filters:
+            - RewritePath=/api/franchise-service/(?<segment>.*), /${segment}
             - name: CircuitBreaker
               args:
                 name: metadataCircuitBreaker
