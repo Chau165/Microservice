@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
@@ -12,10 +13,14 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Base64;
 
 @Configuration
@@ -41,6 +46,23 @@ public class SecurityConfig {
         return NimbusReactiveJwtDecoder.withPublicKey(rsaPublicKey).build();
     }
 
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration config = new CorsConfiguration();
+                config.setAllowedOriginPatterns(Arrays.asList(
+                                "http://localhost:5173",
+                                "https://microservice-1-7foh.onrender.com"
+                ));
+                config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                config.setAllowedHeaders(Arrays.asList("*"));
+                config.setAllowCredentials(true);
+                config.setMaxAge(3600L);
+
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", config);
+                return source;
+        }
+
     /**
      * Public chain: handles /api/auth-service/** WITHOUT JWT validation.
      * Prevents oauth2ResourceServer from rejecting requests with invalid/expired tokens
@@ -54,6 +76,7 @@ public class SecurityConfig {
     ) {
         return http
                 .securityMatcher(new PathPatternParserServerWebExchangeMatcher("/api/auth-service/**"))
+                .cors(cors -> {})
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex.anyExchange().permitAll())
                 .addFilterAt(ipRateLimitWebFilter, SecurityWebFiltersOrder.FIRST)
@@ -74,6 +97,7 @@ public class SecurityConfig {
     ) {
 
         return http
+                .cors(cors -> {})
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
 
                 .exceptionHandling(ex -> ex
@@ -82,6 +106,7 @@ public class SecurityConfig {
                 )
 
                 .authorizeExchange(ex -> ex
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/api/internal/echo/**").authenticated()
                         .pathMatchers("/api/**").authenticated()
