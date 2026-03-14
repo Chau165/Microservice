@@ -21,14 +21,6 @@ spring:
           enabled: true
           lower-case-service-id: true
 
-      # Tạm bỏ default-filters CircuitBreaker để debug rõ lỗi thật của auth-service
-      # Khi chạy ổn rồi hãy bật lại
-      default-filters:
-        - name: CircuitBreaker
-          args:
-            name: defaultCircuitBreaker
-            fallbackUri: forward:/fallback/unknown
-
       routes:
         - id: internal-to-metadata
           uri: lb://METADATA-SERVICE
