@@ -43,7 +43,7 @@ ENV PORT=8080
 ENV EUREKA_URL=https://microservice-59zl.onrender.com/eureka/
 ENV JWK_SET_URI=http://localhost:8085/.well-known/jwks.json
 ENV ACCOUNT_JWKS_URL=http://localhost:8081/.well-known/jwks.json
-ENV JWT_SECRET=Z3JvdXAxX2ZyYW5jaGlzZV9zZXJ2aWNlX3NlY3JldF8yMDI2
+ENV JWT_SECRET=V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=
 
 EXPOSE ${PORT}
 
@@ -54,4 +54,4 @@ ENTRYPOINT ["java", \
   "--eureka.client.service-url.defaultZone=${EUREKA_URL}", \
   "--spring.security.oauth2.resourceserver.jwt.jwk-set-uri=${JWK_SET_URI}", \
   "--app.account-service.jwks-url=${ACCOUNT_JWKS_URL}", \
-  "--jwt.secret=${JWT_SECRET}"]
+  "--security.jwt.secret=${JWT_SECRET}"]
