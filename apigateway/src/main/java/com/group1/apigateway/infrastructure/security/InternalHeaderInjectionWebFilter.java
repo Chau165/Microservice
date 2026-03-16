@@ -6,9 +6,11 @@ import com.group1.apigateway.common.response.ApiResponse;
 import com.group1.apigateway.model.dto.ApiError;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -47,10 +49,8 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-
         String path = exchange.getRequest().getURI().getPath();
 
-        // Skip endpoints that don't need header injection
         if (!path.startsWith("/api/")
                 || path.startsWith("/api/auth/")
                 || path.startsWith("/api/auth-service/")) {
@@ -59,7 +59,6 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
 
         return exchange.getPrincipal()
                 .flatMap(principal -> {
-
                     if (!(principal instanceof JwtAuthenticationToken jwtAuth)) {
                         return chain.filter(exchange);
                     }
@@ -74,25 +73,28 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
                     if (isBlank(userId)) {
                         return forbidden(exchange, "Missing required claim: userId/sub");
                     }
-
                     if (isBlank(role)) {
                         return forbidden(exchange, "Missing required claim: role/roles/authorities");
                     }
-
                     if (isBlank(name)) {
                         return forbidden(exchange, "Missing required claim: name");
                     }
 
-                    ServerHttpRequest mutatedRequest = exchange.getRequest()
-                            .mutate()
-                            .header(HEADER_USER_ID, sanitizeHeaderValue(userId))
-                            .header(HEADER_USER_ROLE, sanitizeHeaderValue(role))
-                            .header(HEADER_USER_NAME, sanitizeHeaderValue(name))
-                            .header(HEADER_USER_PERMISSIONS, sanitizeHeaderValue(permissions))
-                            .build();
+                    ServerHttpRequest decoratedRequest = new ServerHttpRequestDecorator(exchange.getRequest()) {
+                        @Override
+                        public HttpHeaders getHeaders() {
+                            HttpHeaders headers = new HttpHeaders();
+                            headers.putAll(super.getHeaders());
+                            headers.set(HEADER_USER_ID, sanitizeHeaderValue(userId));
+                            headers.set(HEADER_USER_ROLE, sanitizeHeaderValue(role));
+                            headers.set(HEADER_USER_NAME, sanitizeHeaderValue(name));
+                            headers.set(HEADER_USER_PERMISSIONS, sanitizeHeaderValue(permissions));
+                            return headers;
+                        }
+                    };
 
                     ServerWebExchange mutatedExchange = exchange.mutate()
-                            .request(mutatedRequest)
+                            .request(decoratedRequest)
                             .build();
 
                     log.info("Injected headers -> {}={}, {}={}, permsCount={}, path={}",
@@ -108,24 +110,16 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
 
     private String extractName(Map<String, Object> claims) {
         Object name = claims.get("name");
-        if (!isBlank(toText(name))) {
-            return toText(name);
-        }
+        if (!isBlank(toText(name))) return toText(name);
 
         Object displayName = claims.get("displayName");
-        if (!isBlank(toText(displayName))) {
-            return toText(displayName);
-        }
+        if (!isBlank(toText(displayName))) return toText(displayName);
 
         Object username = claims.get("username");
-        if (!isBlank(toText(username))) {
-            return toText(username);
-        }
+        if (!isBlank(toText(username))) return toText(username);
 
         Object preferredUsername = claims.get("preferred_username");
-        if (!isBlank(toText(preferredUsername))) {
-            return toText(preferredUsername);
-        }
+        if (!isBlank(toText(preferredUsername))) return toText(preferredUsername);
 
         Object sub = claims.get("sub");
         return isBlank(toText(sub)) ? null : toText(sub);
@@ -133,40 +127,29 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
 
     private String extractUserId(Map<String, Object> claims) {
         Object uid = claims.get("uid");
-        if (uid != null) {
-            return String.valueOf(uid);
-        }
+        if (uid != null) return String.valueOf(uid);
 
         Object userId = claims.get("userId");
-        if (userId != null) {
-            return String.valueOf(userId);
-        }
+        if (userId != null) return String.valueOf(userId);
 
         Object sub = claims.get("sub");
         return sub != null ? String.valueOf(sub) : null;
     }
 
     private String extractRole(Map<String, Object> claims, JwtAuthenticationToken jwtAuth) {
-
         Object role = claims.get("role");
-        if (role != null) {
-            return normalizeRole(String.valueOf(role));
-        }
+        if (role != null) return normalizeRole(String.valueOf(role));
 
         Object roles = claims.get("roles");
         if (roles instanceof Collection<?> col && !col.isEmpty()) {
             String fromClaims = findFirstRole(col);
-            if (!isBlank(fromClaims)) {
-                return fromClaims;
-            }
+            if (!isBlank(fromClaims)) return fromClaims;
         }
 
         Object auths = claims.get("authorities");
         if (auths instanceof Collection<?> col && !col.isEmpty()) {
             String fromClaims = findFirstRole(col);
-            if (!isBlank(fromClaims)) {
-                return fromClaims;
-            }
+            if (!isBlank(fromClaims)) return fromClaims;
         }
 
         List<String> authorities = jwtAuth.getAuthorities().stream()
@@ -175,9 +158,7 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
 
         if (!authorities.isEmpty()) {
             String fromAuthorities = findFirstRole(authorities);
-            if (!isBlank(fromAuthorities)) {
-                return fromAuthorities;
-            }
+            if (!isBlank(fromAuthorities)) return fromAuthorities;
         }
 
         return null;
@@ -226,15 +207,12 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
     }
 
     private String normalizeRole(String role) {
-        if (role == null || role.trim().isEmpty()) {
-            return null;
-        }
+        if (role == null || role.trim().isEmpty()) return null;
         String trimmed = role.trim();
         return trimmed.startsWith("ROLE_") ? trimmed.substring(5) : trimmed;
     }
 
     private Mono<Void> forbidden(ServerWebExchange exchange, String message) {
-
         var response = exchange.getResponse();
         response.setStatusCode(HttpStatus.FORBIDDEN);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
@@ -261,7 +239,6 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
         }
 
         log.warn("Header injection failed: {}", message);
-
         return response.writeWith(Mono.just(response.bufferFactory().wrap(bytes)));
     }
 
