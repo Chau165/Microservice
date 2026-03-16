@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
   error:
     whitelabel:
       enabled: false
@@ -25,7 +25,7 @@ resilience4j:
 
 spring:
   application:
-    name: ApiGateway
+    name: api-gateway
   profiles:
     active: dev
   webflux:
@@ -100,12 +100,20 @@ security:
 # --- CẤU HÌNH EUREKA CLIENT ---
 eureka:
   instance:
-    prefer-ip-address: true
+    prefer-ip-address: false
+    hostname: ${RENDER_EXTERNAL_HOSTNAME:localhost}
+    secure-port: 443
+    secure-port-enabled: true
+    non-secure-port-enabled: false
+    status-page-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/actuator/info
+    health-check-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/actuator/health
+    home-page-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/
+    instance-id: ${spring.application.name}:${RENDER_EXTERNAL_HOSTNAME:localhost}
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: https://microservice-59zl.onrender.com/eureka/
+      defaultZone: ${EUREKA_URL:https://microservice-59zl.onrender.com/eureka/}
 
 
 management:
