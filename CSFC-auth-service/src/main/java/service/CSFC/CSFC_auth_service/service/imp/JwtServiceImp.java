@@ -5,7 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.GrantedAuthority;
+import java.util.List;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import service.CSFC.CSFC_auth_service.common.security.CustomerUserDetails;
@@ -48,18 +48,24 @@ public class JwtServiceImp implements JwtService {
     @Override
     public String generateAccessToken(UserDetails userDetails) {
         Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("roles", userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList()));
 
         if (userDetails instanceof CustomerUserDetails customUserDetails) {
             var user = customUserDetails.getUser();
+
             extraClaims.put("userId", user.getId());
             extraClaims.put("name", user.getName());
 
             if (user.getRole() != null && user.getRole().getName() != null) {
                 extraClaims.put("role", user.getRole().getName());
             }
+
+            List<String> permissions = user.getRole() != null && user.getRole().getPermissions() != null
+                    ? user.getRole().getPermissions().stream()
+                    .map(p -> p.getName())
+                    .toList()
+                    : List.of();
+
+            extraClaims.put("permissions", permissions);
         }
 
         return buildToken(extraClaims, userDetails, accessTokenExpiration);

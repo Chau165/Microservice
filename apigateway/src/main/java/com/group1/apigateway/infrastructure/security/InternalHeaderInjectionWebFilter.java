@@ -193,6 +193,20 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
     private String extractPermissions(Map<String, Object> claims, JwtAuthenticationToken jwtAuth) {
         List<String> rawAuthorities = new ArrayList<>();
 
+        // Prefer explicit "permissions" claim when present
+        Object permissionsClaim = claims.get("permissions");
+        if (permissionsClaim instanceof Collection<?>) {
+            Collection<?> col = (Collection<?>) permissionsClaim;
+            col.forEach(value -> rawAuthorities.add(toText(value)));
+        } else if (permissionsClaim instanceof String) {
+            String s = (String) permissionsClaim;
+            if (!isBlank(s)) {
+                for (String part : s.split(",")) {
+                    rawAuthorities.add(part.trim());
+                }
+            }
+        }
+
         Object roles = claims.get("roles");
         if (roles instanceof Collection<?>) {
             Collection<?> col = (Collection<?>) roles;
