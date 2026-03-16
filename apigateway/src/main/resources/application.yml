@@ -40,19 +40,14 @@ spring:
           filters:
             - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
 
-        - id: csfc-auth-service-api-prefix
+        - id: csfc-auth-service
           uri: lb://CSFC-AUTH-SERVICE
           predicates:
             - Path=/api/auth-service/**
           filters:
-            - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
-
-        - id: csfc-auth-service-no-prefix
-          uri: lb://CSFC-AUTH-SERVICE
-          predicates:
-            - Path=/auth-service/**
-          filters:
-            - RewritePath=/auth-service/(?<segment>.*), /auth/${segment}
+            # Giữ nguyên như hiện tại.
+            # Nếu AuthController của bạn thực tế là /api/auth/** thì phải đổi dòng này.
+            - RewritePath=/api/auth-service/(?<segment>.*), /api/auth-service/${segment}
 
         - id: franchise-contract-service
           uri: lb://FRANCHISESERVICE
