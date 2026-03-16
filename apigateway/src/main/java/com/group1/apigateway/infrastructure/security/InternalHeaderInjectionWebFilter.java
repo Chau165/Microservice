@@ -57,9 +57,11 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
         return exchange.getPrincipal()
                 .flatMap(principal -> {
 
-                    if (!(principal instanceof JwtAuthenticationToken jwtAuth)) {
+                    if (!(principal instanceof JwtAuthenticationToken)) {
                         return chain.filter(exchange);
                     }
+
+                    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) principal;
 
                     Map<String, Object> claims = jwtAuth.getToken().getClaims();
 
@@ -155,7 +157,8 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
 
         // claim: roles
         Object roles = claims.get("roles");
-        if (roles instanceof Collection<?> col && !col.isEmpty()) {
+        if (roles instanceof Collection<?> && !((Collection<?>) roles).isEmpty()) {
+            Collection<?> col = (Collection<?>) roles;
             String fromClaims = findFirstRole(col);
             if (!isBlank(fromClaims)) {
                 return fromClaims;
@@ -164,7 +167,8 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
 
         // claim: authorities
         Object auths = claims.get("authorities");
-        if (auths instanceof Collection<?> col && !col.isEmpty()) {
+        if (auths instanceof Collection<?> && !((Collection<?>) auths).isEmpty()) {
+            Collection<?> col = (Collection<?>) auths;
             String fromClaims = findFirstRole(col);
             if (!isBlank(fromClaims)) {
                 return fromClaims;
@@ -190,12 +194,14 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
         List<String> rawAuthorities = new ArrayList<>();
 
         Object roles = claims.get("roles");
-        if (roles instanceof Collection<?> col) {
+        if (roles instanceof Collection<?>) {
+            Collection<?> col = (Collection<?>) roles;
             col.forEach(value -> rawAuthorities.add(toText(value)));
         }
 
         Object authorities = claims.get("authorities");
-        if (authorities instanceof Collection<?> col) {
+        if (authorities instanceof Collection<?>) {
+            Collection<?> col = (Collection<?>) authorities;
             col.forEach(value -> rawAuthorities.add(toText(value)));
         }
 

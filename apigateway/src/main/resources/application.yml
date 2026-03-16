@@ -32,6 +32,8 @@ spring:
     base-path: /
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
       routes:
         - id: internal-to-metadata
           uri: lb://METADATA-SERVICE
@@ -45,7 +47,7 @@ spring:
           predicates:
             - Path=/api/auth-service/**
           filters:
-            - RewritePath=/api/auth-service/(?<segment>.*), /${segment}
+            - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
 
         - id: franchise-contract-service
           uri: lb://FRANCHISESERVICE
