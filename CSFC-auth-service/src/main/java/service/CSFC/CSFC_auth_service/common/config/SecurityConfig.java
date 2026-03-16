@@ -1,7 +1,6 @@
 package service.CSFC.CSFC_auth_service.common.config;
 
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,13 +16,11 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import service.CSFC.CSFC_auth_service.common.security.AuthorizationFilter;
 import service.CSFC.CSFC_auth_service.common.security.CustomerUserDetailsService;
-import service.CSFC.CSFC_auth_service.common.security.JwtProperties;
 
 import java.util.List;
 
 @EnableMethodSecurity
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
     @Bean
@@ -39,11 +36,17 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(request -> {
                     request.requestMatchers(
-                                    "/api/auth-service/register",
-                                    "/api/auth-service/login",
-                                    "/api/auth-service/refresh",
-                                    "/api/auth-service/forgot-password",
-                                    "/api/auth-service/reset-password"
+                                    "/auth/register",
+                                    "/auth/login",
+                                    "/auth/refresh",
+                                    "/auth/forgot-password",
+                                    "/auth/reset-password",
+                                    "/v3/api-docs/**",
+                                    "/v3/api-docs.yaml",
+                                    "/swagger-ui/**",
+                                    "/swagger-ui.html",
+                                    "/swagger-resources/**",
+                                    "/webjars/**"
                             ).permitAll()
 
                             .anyRequest().authenticated();
@@ -51,7 +54,7 @@ public class SecurityConfig {
                 .addFilterBefore(authorizationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-
+// Cấu hình AuthenticationManager để sử dụng CustomerUserDetailsService và PasswordEncoder
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http, CustomerUserDetailsService customerUserDetailsService) throws Exception {
         AuthenticationManagerBuilder authBuilder =
@@ -68,7 +71,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Cho phép Frontend ở cổng 5173 truy cập
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://microservice-1-7foh.onrender.com"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:8080"));
         // Cho phép các HTTP method này
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         // Cho phép các header cần thiết

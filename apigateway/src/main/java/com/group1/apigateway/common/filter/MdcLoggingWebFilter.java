@@ -23,22 +23,41 @@ import java.util.UUID;
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
 public class MdcLoggingWebFilter implements WebFilter {
 
+    private static final String REQUEST_ID_HEADER = "X-Request-ID";
+
     @Override
     @NonNull
     public Mono<Void> filter(@NonNull ServerWebExchange exchange,
                              @NonNull WebFilterChain chain) {
 
-        String requestId = UUID.randomUUID().toString();
+        String requestId = exchange.getRequest()
+                .getHeaders()
+                .getFirst(REQUEST_ID_HEADER);
+
+        if (requestId == null || requestId.isBlank()) {
+            requestId = UUID.randomUUID().toString();
+        }
+
+        String finalRequestId = requestId;
+
+        ServerWebExchange mutatedExchange = exchange.mutate()
+                .request(builder ->
+                        builder.header(REQUEST_ID_HEADER, finalRequestId))
+                .build();
+
+        mutatedExchange.getResponse()
+                .getHeaders()
+                .add(REQUEST_ID_HEADER, finalRequestId);
 
         return ReactiveSecurityContextHolder.getContext()
-                .map(SecurityContext::getAuthentication)   // method reference
+                .map(SecurityContext::getAuthentication)
                 .map(Optional::of)
                 .defaultIfEmpty(Optional.empty())
                 .flatMap(optAuth -> {
 
-                    populateMdc(requestId, optAuth.orElse(null));
+                    populateMdc(finalRequestId, optAuth.orElse(null));
 
-                    return chain.filter(exchange)
+                    return chain.filter(mutatedExchange)
                             .doFinally(signal -> MDC.clear());
                 });
     }

@@ -1,26 +1,37 @@
 server:
-  port: ${PORT:8080}
+  port: 8080
   error:
     whitelabel:
       enabled: false
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      metadataCircuitBreaker:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+
+  timelimiter:
+    instances:
+      metadataCircuitBreaker:
+        timeout-duration: 3s
+        cancel-running-future: true
+
 spring:
   application:
-    name: api-gateway
-
+    name: ApiGateway
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
-
+    active: dev
   webflux:
     base-path: /
-
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-
       routes:
         - id: internal-to-metadata
           uri: lb://METADATA-SERVICE
@@ -34,9 +45,7 @@ spring:
           predicates:
             - Path=/api/auth-service/**
           filters:
-            # Giữ nguyên như hiện tại.
-            # Nếu AuthController của bạn thực tế là /api/auth/** thì phải đổi dòng này.
-            - RewritePath=/api/auth-service/(?<segment>.*), /api/auth-service/${segment}
+            - RewritePath=/api/auth-service/(?<segment>.*), /${segment}
 
         - id: franchise-contract-service
           uri: lb://FRANCHISESERVICE
@@ -80,97 +89,42 @@ spring:
             - Path=/api/franchise-service/**
           filters:
             - RewritePath=/api/franchise-service/(?<segment>.*), /api/franchise-service/${segment}
-            - name: CircuitBreaker
-              args:
-                name: metadataCircuitBreaker
-                fallbackUri: forward:/fallback/METADATA-SERVICE
+
+app:
+  version: 1.0.0
 
 security:
   jwt:
-    public-key: ${JWT_PUBLIC_KEY:MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx9kqCNTmQc3NKpkTizMn6N4X4AuHUqFhtPzoHccV6MiNnsD7UGsiYPp/Ifn/4TqqnJFhSI/a+UhtWY2zhOcToeekEx/hCcgTUeKBwFuhWlXKjvR5Ao7Qezkf86DQ3GsM1k+vKOQ26Mfa8iksmGlIYotL/ALAPKdwsVq9f95L1iDFB7/CUTSEfOhD0WdUkmLae/Ta/sHa0qz4ZdoN/dKvqkepNk1P1hGM86YBvCLca72wRtJe7BsoF+oz2CQ73x+1Xc/6MZ8jProFO4L8BBU6fJzWX/sXDSgjU8nt8Y1tClzhlB60MUtjaXFAyq8ltpiS2OGK2zSZnNjkQ83lKxyC0QIDAQAB}
+    secret: ${JWT_SECRET:V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=}
 
+# --- CẤU HÌNH EUREKA CLIENT ---
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
-    enabled: true
-    service-url:
-      defaultZone: ${EUREKA_URL:https://microservice-6dyb.onrender.com/eureka/}
     register-with-eureka: true
     fetch-registry: true
-    healthcheck:
-      enabled: true
+    service-url:
+      defaultZone: https://microservice-59zl.onrender.com/eureka/
 
-  instance:
-    prefer-ip-address: false
-    hostname: ${RENDER_EXTERNAL_HOSTNAME:${HOSTNAME:localhost}}
-    # Render chỉ expose HTTPS port 443 ra ngoài
-    secure-port: 443
-    secure-port-enabled: true
-    non-secure-port-enabled: false
-    status-page-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/actuator/info
-    health-check-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/actuator/health
-    home-page-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/
-    instance-id: ${spring.application.name}:443
-
-rate-limit:
-  ip:
-    enabled: ${RATE_LIMIT_ENABLED:true}
-    default-limit: ${RATE_LIMIT_DEFAULT:60}
-    window-seconds: 60
-    refresh-seconds: 15
-    config-key: gateway.ip.rate_limit.per_minute
-
-app:
-  version: ${APP_VERSION:1.0.0}
-  slow-request:
-    threshold-ms: ${SLOW_REQUEST_THRESHOLD:2000}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,circuitbreakers,gateway
+        include: health,info,circuitbreakers
   endpoint:
     health:
       show-details: always
 
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10000
-        permittedNumberOfCallsInHalfOpenState: 3
-
-    instances:
-      defaultCircuitBreaker:
-        baseConfig: default
-
-      metadataCircuitBreaker:
-        register-health-indicator: true
-        sliding-window-type: COUNT_BASED
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
-        automatic-transition-from-open-to-half-open-enabled: true
-
-  timelimiter:
-    instances:
-      defaultCircuitBreaker:
-        timeout-duration: 30s
-      metadataCircuitBreaker:
-        timeout-duration: 3s
-        cancel-running-future: true
+rate-limit:
+  ip:
+    enabled: true
+    config-key: gateway.ip.rate_limit.per_minute
+    default-limit: 60
+    window-seconds: 60
+    refresh-seconds: 15
 
 logging:
-  level:
-    com.group1.apigateway: DEBUG
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.cloud.loadbalancer: DEBUG
-    com.netflix.discovery: DEBUG
-    org.springframework.cloud.netflix.eureka: DEBUG
-    reactor.netty.http.client: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [${spring.application.name:}] [requestId:%X{requestId}] %logger - %msg%n"

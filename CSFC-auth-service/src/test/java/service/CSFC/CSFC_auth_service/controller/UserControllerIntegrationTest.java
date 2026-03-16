@@ -51,8 +51,7 @@ class UserControllerIntegrationTest {
     @Test
     @WithMockUser
     void createAccountByAdmin_endpoint_returnsCreated() throws Exception {
-        CreateUserRequest request = new CreateUserRequest("inttest@example.com", "Integration User", "Addr", null);
-        UserResponse response = new UserResponse(UUID.randomUUID(), "Integration User", "inttest@example.com", "USER", "Addr");
+        UserResponse response = new UserResponse(UUID.randomUUID(), "Integration User", "inttest@example.com", "Addr");
 
         when(userService.CreateUserWithRoleByAdmin(request)).thenReturn(response);
 

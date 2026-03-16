@@ -33,7 +33,6 @@ public class UserMapper {
         response.setId(user.getId());
         response.setName(user.getName());
         response.setEmail(user.getEmail());
-        response.setRole(user.getRole().getName());
         response.setAddress(user.getAddress());
         return response;
     }

@@ -29,7 +29,7 @@ class UserControllerUnitTest {
     void createAccountByAdmin_success() {
         // Arrange
         CreateUserRequest request = new CreateUserRequest("test@example.com", "Test User", "Some address", null);
-        UserResponse expected = new UserResponse(UUID.randomUUID(), "Test User", "test@example.com", "USER", "Some address");
+        UserResponse expected = new UserResponse(UUID.randomUUID(), "Test User", "test@example.com", "Some address");
 
         when(userService.CreateUserWithRoleByAdmin(request)).thenReturn(expected);
 

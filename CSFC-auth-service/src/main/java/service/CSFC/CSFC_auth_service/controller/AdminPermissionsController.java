@@ -8,12 +8,14 @@ import org.springframework.web.bind.annotation.*;
 import service.CSFC.CSFC_auth_service.common.response.BaseResponse;
 import service.CSFC.CSFC_auth_service.model.dto.response.AdminPermissionsViewResponse;
 import service.CSFC.CSFC_auth_service.service.AdminPermissionsService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
+@Tag(name = "Admin - Permissions Management", description = "Admin quản lý permissions và gán permission cho role")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/auth-service/admin-permission/roles")
+@RequestMapping("/admin/roles")
 public class AdminPermissionsController {
 
     private final AdminPermissionsService adminPermissionsService;

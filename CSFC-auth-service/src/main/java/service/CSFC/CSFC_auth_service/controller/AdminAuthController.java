@@ -12,12 +12,14 @@ import service.CSFC.CSFC_auth_service.model.dto.response.UserDetailResponse;
 import service.CSFC.CSFC_auth_service.model.dto.response.UserListResponse;
 import service.CSFC.CSFC_auth_service.model.dto.response.UserResponse;
 import service.CSFC.CSFC_auth_service.service.AdminUserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.UUID;
 
+@Tag(name = "Admin - User Management", description = "Admin quản lý người dùng, gán role, reset password")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/auth-service/admin/auth-users")
+@RequestMapping("/api/admin/auth-users")
 public class AdminAuthController {
 
     private final AdminUserService adminUserService;

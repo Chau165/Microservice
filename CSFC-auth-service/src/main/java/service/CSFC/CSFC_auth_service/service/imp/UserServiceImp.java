@@ -2,14 +2,11 @@ package service.CSFC.CSFC_auth_service.service.imp;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import service.CSFC.CSFC_auth_service.common.exception.BadRequestException;
 import service.CSFC.CSFC_auth_service.common.exception.ResourceNotFoundException;
-import service.CSFC.CSFC_auth_service.infrastructure.client.InternalShiftClient;
 import service.CSFC.CSFC_auth_service.mapper.UserMapper;
-import service.CSFC.CSFC_auth_service.model.dto.internal.CreateStaffInternalRequest;
 import service.CSFC.CSFC_auth_service.model.dto.request.CreateUserRequest;
 import service.CSFC.CSFC_auth_service.model.dto.response.UserResponse;
 import service.CSFC.CSFC_auth_service.model.entity.Roles;
@@ -21,7 +18,6 @@ import service.CSFC.CSFC_auth_service.service.UserService;
 import java.util.UUID;
 
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImp implements UserService {
@@ -30,7 +26,6 @@ public class UserServiceImp implements UserService {
     private final UsersRepository usersRepository;
     private final RolesRepository rolesRepository;
     private final UserMapper userMapper;
-    private final InternalShiftClient internalShiftClient;
 
     @Override
     public UserResponse getCurrentUser(String email) {
@@ -81,30 +76,7 @@ public class UserServiceImp implements UserService {
         user.setIsActive(true);
         user.setIsFirstLogin(true);
 
-        Users savedUser = usersRepository.save(user);
-
-        String roleName = savedUser.getRole().getName();
-
-        if ("STAFF".equalsIgnoreCase(roleName)) {
-            CreateStaffInternalRequest staffRequest = CreateStaffInternalRequest.builder()
-                    .userId(savedUser.getId().toString())
-                    .name(savedUser.getName())
-                    .email(savedUser.getEmail())
-                    .phone(null)
-                    .build();
-            try {
-                internalShiftClient.createStaff(staffRequest);
-            } catch (Exception e) {
-                log.error("Failed to create staff profile in Shift Service for userId={}: {}",
-                        savedUser.getId(), e.getMessage());
-                // Xóa user vừa tạo để đảm bảo tính nhất quán (best-effort rollback)
-                usersRepository.delete(savedUser);
-                throw new BadRequestException(
-                        "Tạo tài khoản thất bại: không thể tạo hồ sơ nhân viên ở Shift Service");
-            }
-        }
-
-        return userMapper.toResponse(savedUser);
+        return userMapper.toResponse(usersRepository.save(user));
     }
 
     @Override

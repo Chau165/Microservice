@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import service.CSFC.CSFC_auth_service.model.entity.Permission;
 
-import java.security.Permissions;
 import java.util.Optional;
 
 @Repository

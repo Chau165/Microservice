@@ -99,7 +99,7 @@ public class AuthenticationServiceImp implements AuthenticationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với email: " + request.getEmail()));
 
         String resetToken = jwtService.generatePasswordResetToken(user.getEmail());
-        String resetLink = "http://localhost:3000/reset-password?token=" + resetToken;
+        String resetLink = "http://localhost:5173/reset-password?token=" + resetToken;
         emailService.sendEmail(user.getEmail(), resetLink);
     }
 
