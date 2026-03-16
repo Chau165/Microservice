@@ -1,6 +1,5 @@
 package service.CSFC.CSFC_auth_service.common.config;
 
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,37 +27,36 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthorizationFilter authorizationFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthorizationFilter authorizationFilter)
+            throws Exception {
         return http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(request -> {
                     request.requestMatchers(
-                                    "/auth/register",
-                                    "/auth/login",
-                                    "/auth/refresh",
-                                    "/auth/forgot-password",
-                                    "/auth/reset-password",
-                                    "/v3/api-docs/**",
-                                    "/v3/api-docs.yaml",
-                                    "/swagger-ui/**",
-                                    "/swagger-ui.html",
-                                    "/swagger-resources/**",
-                                    "/webjars/**"
-                            ).permitAll()
-
+                            "/auth/register",
+                            "/auth/login",
+                            "/auth/refresh",
+                            "/auth/forgot-password",
+                            "/auth/reset-password",
+                            "/v3/api-docs/**",
+                            "/v3/api-docs.yaml",
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/swagger-resources/**",
+                            "/webjars/**").permitAll()
                             .anyRequest().authenticated();
                 })
                 .addFilterBefore(authorizationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-// Cấu hình AuthenticationManager để sử dụng CustomerUserDetailsService và PasswordEncoder
+
+    // Cấu hình AuthenticationManager để sử dụng CustomerUserDetailsService và
+    // PasswordEncoder
     @Bean
-    public AuthenticationManager authenticationManager(HttpSecurity http, CustomerUserDetailsService customerUserDetailsService) throws Exception {
-        AuthenticationManagerBuilder authBuilder =
-                http.getSharedObject(AuthenticationManagerBuilder.class);
+    public AuthenticationManager authenticationManager(HttpSecurity http,
+            CustomerUserDetailsService customerUserDetailsService) throws Exception {
+        AuthenticationManagerBuilder authBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
 
         authBuilder
                 .userDetailsService(customerUserDetailsService)
