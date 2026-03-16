@@ -45,9 +45,7 @@ spring:
           predicates:
             - Path=/api/auth-service/**
           filters:
-            # Giữ nguyên như hiện tại.
-            # Nếu AuthController của bạn thực tế là /api/auth/** thì phải đổi dòng này.
-            - RewritePath=/api/auth-service/(?<segment>.*), /api/auth-service/${segment}
+            - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
 
         - id: franchise-contract-service
           uri: lb://FRANCHISESERVICE
