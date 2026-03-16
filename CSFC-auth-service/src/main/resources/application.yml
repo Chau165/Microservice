@@ -1,0 +1,101 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: csfc-auth-service
+
+  datasource:
+    # Render PostgreSQL (internal hostname - same Render region)
+    url: ${DATABASE_URL:jdbc:postgresql://dpg-d6khipjh46gs73cuc7kg-a/csfc_auth}
+    username: ${DB_USERNAME:csfc_auth_user}
+    password: ${DB_PASSWORD:BMmpo3RuNHzJdvWzTRRW8LV6GxLTrB6U}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      initialization-fail-timeout: 30000
+      connection-timeout: 60000
+      connection-test-query: SELECT 1
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        boot:
+          allow_jdbc_metadata_access: false
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: tuldse184668@fpt.edu.vn
+    password: fryzapjrxznpmkyc
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            trust: smtp.gmail.com
+
+eureka:
+  client:
+    enabled: true
+    service-url:
+      defaultZone: https://microservice-59zl.onrender.com/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+  instance:
+    prefer-ip-address: false
+    hostname: ${RENDER_EXTERNAL_HOSTNAME:localhost}
+    secure-port: 443
+    secure-port-enabled: true
+    non-secure-port-enabled: false
+    status-page-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/actuator/info
+    health-check-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/actuator/health
+    home-page-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    instance-id: ${spring.application.name}:443
+
+internal:
+  services:
+    metadata-service: ${METADATA_SERVICE_URL:http://localhost:8763}
+
+jwt:
+  secret: ${JWT_SECRET:V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=}
+  access-token-expiration: 900000
+  refresh-token-expiration: 604800000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState,ping
+        readiness:
+          include: readinessState
+
+  health:
+    defaults:
+      enabled: true
+    db:
+      enabled: false
+    discovery:
+      enabled: false
+    mail:
+      enabled: false
