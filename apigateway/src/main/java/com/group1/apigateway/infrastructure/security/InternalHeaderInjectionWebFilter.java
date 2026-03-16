@@ -82,9 +82,11 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
                         return forbidden(exchange, "Missing required claim: name");
                     }
 
-                    // Inject headers
+                    // Inject headers and remove Authorization to prevent downstream JWT parsing
                     ServerWebExchange mutatedExchange = exchange.mutate()
                             .request(builder -> builder.headers(headers -> {
+                                headers.remove("Authorization");
+                                headers.remove("authorization");
                                 headers.set(HEADER_USER_ID, sanitizeHeaderValue(userId));
                                 headers.set(HEADER_USER_ROLE, sanitizeHeaderValue(role));
                                 headers.set(HEADER_USER_NAME, sanitizeHeaderValue(name));
