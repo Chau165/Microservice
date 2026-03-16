@@ -40,13 +40,18 @@ spring:
           filters:
             - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
 
-        - id: csfc-auth-service
+        - id: csfc-auth-service-api-prefix
           uri: lb://CSFC-AUTH-SERVICE
           predicates:
             - Path=/api/auth-service/**
-            - Path=/auth-service/**
           filters:
             - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
+
+        - id: csfc-auth-service-no-prefix
+          uri: lb://CSFC-AUTH-SERVICE
+          predicates:
+            - Path=/auth-service/**
+          filters:
             - RewritePath=/auth-service/(?<segment>.*), /auth/${segment}
 
         - id: franchise-contract-service
