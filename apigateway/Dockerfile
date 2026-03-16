@@ -47,11 +47,4 @@ ENV JWT_SECRET=V7Pz0c5ZmTz4IVBdBrgiapaNOSKpRDWtT8AsXm+C1mE=
 
 EXPOSE ${PORT}
 
-ENTRYPOINT ["java", \
-  "-Djava.security.egd=file:/dev/./urandom", \
-  "-jar", "app.jar", \
-  "--server.port=${PORT}", \
-  "--eureka.client.service-url.defaultZone=${EUREKA_URL}", \
-  "--spring.security.oauth2.resourceserver.jwt.jwk-set-uri=${JWK_SET_URI}", \
-  "--app.account-service.jwks-url=${ACCOUNT_JWKS_URL}", \
-  "--security.jwt.secret=${JWT_SECRET}"]
+ENTRYPOINT ["sh", "-c", "java -Djava.security.egd=file:/dev/./urandom -jar app.jar --server.port=${PORT} --eureka.client.service-url.defaultZone=${EUREKA_URL} --spring.security.oauth2.resourceserver.jwt.jwk-set-uri=${JWK_SET_URI} --app.account-service.jwks-url=${ACCOUNT_JWKS_URL} --security.jwt.secret=${JWT_SECRET}"]
