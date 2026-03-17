@@ -42,6 +42,7 @@ spring:
           filters:
             - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
 
+          # Authentication Service
         - id: csfc-auth-service
           uri: lb://CSFC-AUTH-SERVICE
           predicates:
@@ -49,13 +50,15 @@ spring:
           filters:
             - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
 
-        - id: franchise-contract-service
-          uri: lb://FRANCHISESERVICE
+   
+        - id: authentication-service
+          uri: lb://AUTHENTICATION-SERVICE
           predicates:
-            - Path=/api/contracts/**
+            - Path=/api/authentication-service/**
           filters:
-            - RewritePath=/api/contracts/(?<segment>.*), /api/contracts/${segment}
+            - RewritePath=/api/authentication-service/(?<segment>.*), /api/v1/${segment}
 
+        # Engagement Service
         - id: engagement-service
           uri: lb://ENGAGEMENT-SERVICE
           predicates:
@@ -63,13 +66,14 @@ spring:
           filters:
             - RewritePath=/api/engagement-service/(?<segment>.*), /api/engagement-service/${segment}
 
+        #Warehouse Service
         - id: warehouse-service
           uri: lb://WAREHOUSE-SERVICE
           predicates:
             - Path=/api/warehouse-service/**
           filters:
             - RewritePath=/api/warehouse-service/(?<segment>.*), /api/warehouse-service/${segment}
-
+          #Metadata Service (Franchise / Shift / Metadata)
         - id: shift-service
           uri: lb://METADATA-SERVICE
           predicates:
@@ -91,6 +95,23 @@ spring:
             - Path=/api/franchise-service/**
           filters:
             - RewritePath=/api/franchise-service/(?<segment>.*), /api/franchise-service/${segment}
+
+        - id: franchise-contract-service
+          uri: lb://FRANCHISESERVICE
+          predicates:
+            - Path=/api/contracts/**
+          filters:
+            - RewritePath=/api/contracts/(?<segment>.*), /api/contracts/${segment}
+
+          # Report Service
+        - id: report-service
+          uri: lb://REPORT-SERVICE
+          predicates:
+            - Path=/api/report-service/**
+          filters:
+            - RewritePath=/api/report-service/(?<segment>.*), /api/v1/${segment}
+
+
 
 app:
   version: 1.0.0
