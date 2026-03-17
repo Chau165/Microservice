@@ -6,17 +6,18 @@ spring:
     name: csfc-auth-service
 
   datasource:
-    # Render PostgreSQL (internal hostname - same Render region)
-    url: ${DATABASE_URL:jdbc:postgresql://dpg-d6khipjh46gs73cuc7kg-a/csfc_auth}
+    # Dùng EXTERNAL URL vì service và database khác Render account
+    url: ${DATABASE_URL:jdbc:postgresql://dpg-d6khipjh46gs73cuc7kg-a.oregon-postgres.render.com:5432/csfc_auth?sslmode=require}
     username: ${DB_USERNAME:csfc_auth_user}
     password: ${DB_PASSWORD:BMmpo3RuNHzJdvWzTRRW8LV6GxLTrB6U}
     driver-class-name: org.postgresql.Driver
     hikari:
       initialization-fail-timeout: 30000
       connection-timeout: 60000
-      connection-test-query: SELECT 1
+      validation-timeout: 5000
       maximum-pool-size: 5
       minimum-idle: 1
+      connection-test-query: SELECT 1
 
   jpa:
     hibernate:
@@ -32,8 +33,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: tuldse184668@fpt.edu.vn
-    password: fryzapjrxznpmkyc
+    username: ${MAIL_USERNAME:tuldse184668@fpt.edu.vn}
+    password: ${MAIL_PASSWORD:fryzapjrxznpmkyc}
     properties:
       mail:
         smtp:
@@ -47,7 +48,7 @@ eureka:
   client:
     enabled: true
     service-url:
-      defaultZone: https://microservice-59zl.onrender.com/eureka/
+      defaultZone: ${EUREKA_SERVER_URL:https://microservice-i7nc.onrender.com/eureka/}
     register-with-eureka: true
     fetch-registry: true
 
