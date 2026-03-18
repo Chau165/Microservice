@@ -1,6 +1,7 @@
 package com.group1.apigateway.common.filter;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 
 @Slf4j
 @Component
@@ -50,8 +52,7 @@ public class AuthenticationFilter implements GlobalFilter {
         String token = authHeader.substring(7);
 
         try {
-            // Cú pháp JJWT 0.12.x
-            SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+            SecretKey key = getSigningKey();
 
             Claims claims = Jwts.parser()
                     .verifyWith(key)
@@ -63,7 +64,7 @@ public class AuthenticationFilter implements GlobalFilter {
             String userId = claims.getSubject();
             String role = claims.get("role", String.class);
             String name = claims.get("name", String.class);
-            String permissions = claims.get("permissions", String.class);
+            String permissions = extractPermissions(claims);
 
             log.debug("✓ Token validated for user: {}, role: {}, path: {}", userId, role, path);
 
@@ -81,6 +82,33 @@ public class AuthenticationFilter implements GlobalFilter {
             log.error("❌ JWT validation failed for path: {}, error: {}", path, e.getMessage());
             return onError(exchange, "Token invalid or expired", HttpStatus.UNAUTHORIZED);
         }
+    }
+
+    private SecretKey getSigningKey() {
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(secretKey.trim());
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (IllegalArgumentException ex) {
+            return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private String extractPermissions(Claims claims) {
+        Object permissionsClaim = claims.get("permissions");
+        if (permissionsClaim instanceof Collection<?> collection) {
+            return collection.stream()
+                    .map(String::valueOf)
+                    .map(String::trim)
+                    .filter(value -> !value.isBlank())
+                    .reduce((left, right) -> left + "," + right)
+                    .orElse("");
+        }
+
+        if (permissionsClaim != null) {
+            return String.valueOf(permissionsClaim).trim();
+        }
+
+        return "";
     }
 
     private boolean isPublicPath(String path) {
