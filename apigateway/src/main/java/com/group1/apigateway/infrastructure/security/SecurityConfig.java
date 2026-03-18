@@ -31,7 +31,8 @@ public class SecurityConfig {
                         .anyExchange().permitAll()
                 )
 
-                .addFilterAt(ipRateLimitWebFilter, SecurityWebFiltersOrder.FIRST)
+                // Temporarily disabled IpRateLimitWebFilter - it's calling metadata-service which is failing (403)
+                // .addFilterAt(ipRateLimitWebFilter, SecurityWebFiltersOrder.FIRST)
                 .addFilterAfter(internalHeaderInjectionWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)
 
                 .build();
