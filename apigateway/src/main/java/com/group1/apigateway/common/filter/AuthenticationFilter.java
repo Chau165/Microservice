@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Component
+//@Component
 public class AuthenticationFilter implements GlobalFilter {
 
     @Value("${security.jwt.secret}")
