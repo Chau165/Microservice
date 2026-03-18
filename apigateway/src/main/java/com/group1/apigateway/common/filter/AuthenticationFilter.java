@@ -12,13 +12,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 @Slf4j
 @Component
@@ -27,36 +25,25 @@ public class AuthenticationFilter implements GlobalFilter {
     @Value("${security.jwt.secret}")
     private String secretKey;
 
-    private final AntPathMatcher matcher = new AntPathMatcher();
-
-    // Danh sách whitelist - các endpoint không cần JWT token
-    private static final List<String> PUBLIC_PATHS = List.of(
-            "/api/auth-service/**",
-            "/api/authentication-service/**",
-            "/api/public/**",
-            "/v3/api-docs/**",
-            "/swagger-ui/**",
-            "/swagger-ui.html",
-            "/api/*-service/**/public/**"
-    );
-
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
         String method = exchange.getRequest().getMethod().name();
 
-        log.debug("AuthenticationFilter - path: {}, method: {}", path, method);
+        log.info("AuthenticationFilter - path: {}, method: {}", path, method);
 
         // 1. Kiểm tra Whitelist - public paths không cần JWT
         if (isPublicPath(path)) {
-            log.debug("Public path matched: {}", path);
+            log.info("✓ Public path matched: {}", path);
             return chain.filter(exchange);
         }
+
+        log.warn("⚠ Protected path, checking JWT: {}", path);
 
         // 2. Kiểm tra Authorization Header cho protected endpoints
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.warn("Missing or invalid Authorization header for path: {}", path);
+            log.warn("❌ Missing or invalid Authorization header for path: {}", path);
             return onError(exchange, "Missing or invalid Authorization Header", HttpStatus.UNAUTHORIZED);
         }
 
@@ -78,7 +65,7 @@ public class AuthenticationFilter implements GlobalFilter {
             String name = claims.get("name", String.class);
             String permissions = claims.get("permissions", String.class);
 
-            log.debug("Token validated for user: {}, role: {}, path: {}", userId, role, path);
+            log.debug("✓ Token validated for user: {}, role: {}, path: {}", userId, role, path);
 
             // 4. Inject user info vào request headers để service con sử dụng
             ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
@@ -91,13 +78,22 @@ public class AuthenticationFilter implements GlobalFilter {
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
 
         } catch (Exception e) {
-            log.error("JWT validation failed for path: {}, error: {}", path, e.getMessage());
+            log.error("❌ JWT validation failed for path: {}, error: {}", path, e.getMessage());
             return onError(exchange, "Token invalid or expired", HttpStatus.UNAUTHORIZED);
         }
     }
 
     private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(pattern -> matcher.match(pattern, path));
+        // Direct string checks - more reliable than pattern matching
+        return path.startsWith("/api/auth-service/")
+                || path.startsWith("/api/authentication-service/")
+                || path.startsWith("/api/public/")
+                || path.startsWith("/api/") && (path.contains("/public/") || path.contains("/status"))
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")
+                || path.equals("/swagger-ui.html")
+                || path.startsWith("/actuator")
+                || path.startsWith("/auth/");
     }
 
     private Mono<Void> onError(ServerWebExchange exchange, String message, HttpStatus status) {
