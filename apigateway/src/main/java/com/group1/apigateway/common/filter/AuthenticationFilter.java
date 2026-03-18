@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -70,7 +69,7 @@ public class AuthenticationFilter implements GlobalFilter {
             // 3. Trích xuất thông tin từ JWT claims
             String userId = extractUserId(claims);
             String role = extractRole(claims);
-            String name = claims.get("name", String.class);
+            String name = extractName(claims);
             String permissions = extractPermissions(claims);
 
             log.info("JWT claims extracted - requestId: {}, path: {}, sub: {}, userIdClaim: {}, role: {}, hasName: {}, permissionsCount: {}, claimKeys: {}",
@@ -124,7 +123,7 @@ public class AuthenticationFilter implements GlobalFilter {
     }
 
     private String extractUserId(Claims claims) {
-        String userId = claims.get("userId", String.class);
+        String userId = toText(claims.get("userId"));
         if (StringUtils.hasText(userId)) {
             return userId;
         }
@@ -139,7 +138,7 @@ public class AuthenticationFilter implements GlobalFilter {
     }
 
     private String extractRole(Claims claims) {
-        String role = claims.get("role", String.class);
+        String role = toText(claims.get("role"));
         if (StringUtils.hasText(role)) {
             return normalizeRole(role);
         }
@@ -161,6 +160,25 @@ public class AuthenticationFilter implements GlobalFilter {
         }
 
         return null;
+    }
+
+    private String extractName(Claims claims) {
+        String name = toText(claims.get("name"));
+        if (StringUtils.hasText(name)) {
+            return name;
+        }
+
+        String displayName = toText(claims.get("displayName"));
+        if (StringUtils.hasText(displayName)) {
+            return displayName;
+        }
+
+        String username = toText(claims.get("username"));
+        if (StringUtils.hasText(username)) {
+            return username;
+        }
+
+        return toText(claims.getSubject());
     }
 
     private SecretKey getSigningKey() {
