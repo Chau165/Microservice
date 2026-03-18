@@ -66,20 +66,28 @@ public class AuthenticationFilter implements GlobalFilter {
             String name = claims.get("name", String.class);
             String permissions = extractPermissions(claims);
 
-            log.debug("✓ Token validated for user: {}, role: {}, path: {}", userId, role, path);
+            log.debug("✓ Token extracted - userId: {}, role: {}, name: {}, perms: {}", userId, role, name, permissions);
+
+            // Validate required claims
+            if (userId == null || userId.isBlank()) {
+                log.warn("❌ Missing required claim: subject/userId for path: {}", path);
+                return onError(exchange, "Missing required claim: userId", HttpStatus.UNAUTHORIZED);
+            }
 
             // 4. Inject user info vào request headers để service con sử dụng
             ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                     .header("X-User-Id", userId)
-                    .header("X-User-Role", role)
+                    .header("X-User-Role", role != null ? role : "")
                     .header("X-User-Name", name != null ? name : "")
                     .header("X-User-Permissions", permissions != null ? permissions : "")
                     .build();
 
+            log.info("✓ Token validated for user: {}, role: {}, path: {}", userId, role, path);
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
 
         } catch (Exception e) {
-            log.error("❌ JWT validation failed for path: {}, error: {}", path, e.getMessage());
+            log.error("❌ JWT validation failed for path: {}, exception type: {}, error: {}", 
+                    path, e.getClass().getSimpleName(), e.getMessage(), e);
             return onError(exchange, "Token invalid or expired", HttpStatus.UNAUTHORIZED);
         }
     }
