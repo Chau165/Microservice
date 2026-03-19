@@ -52,7 +52,9 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
         String path = exchange.getRequest().getURI().getPath();
 
         if (!path.startsWith("/api/")
+                || path.contains("/public/")
                 || path.startsWith("/api/auth/")
+                || path.startsWith("/api/authentication-service/")
                 || path.startsWith("/api/auth-service/")) {
             return chain.filter(exchange);
         }
@@ -85,10 +87,17 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
                         public HttpHeaders getHeaders() {
                             HttpHeaders headers = new HttpHeaders();
                             headers.putAll(super.getHeaders());
+
+                            headers.remove(HEADER_USER_ID);
+                            headers.remove(HEADER_USER_ROLE);
+                            headers.remove(HEADER_USER_NAME);
+                            headers.remove(HEADER_USER_PERMISSIONS);
+
                             headers.set(HEADER_USER_ID, sanitizeHeaderValue(userId));
                             headers.set(HEADER_USER_ROLE, sanitizeHeaderValue(role));
                             headers.set(HEADER_USER_NAME, sanitizeHeaderValue(name));
                             headers.set(HEADER_USER_PERMISSIONS, sanitizeHeaderValue(permissions));
+
                             return headers;
                         }
                     };
@@ -193,6 +202,7 @@ public class InternalHeaderInjectionWebFilter implements WebFilter {
                 .map(String::trim)
                 .filter(value -> !value.startsWith("ROLE_"))
                 .distinct()
+                .map(String::toUpperCase)
                 .collect(Collectors.joining(","));
     }
 
