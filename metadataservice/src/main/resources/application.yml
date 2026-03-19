@@ -1,0 +1,61 @@
+server:
+  address: 0.0.0.0
+  port: ${PORT:8763}
+
+spring:
+  application:
+    name: metadata-service
+
+  data:
+    redis:
+      url: redis://default:ItRBEjljWMXDHICNFJdCxBTjGIHPmzMk@centerbeam.proxy.rlwy.net:25969
+
+  cache:
+    type: none
+
+  datasource:
+    url: jdbc:mysql://shinkansen.proxy.rlwy.net:39756/railway?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: ${DB_PASSWORD:pNXyuMURcClGkORjMGPzkfZezcuwjhkj}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:https://microservice-59zl.onrender.com/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+
+  instance:
+    prefer-ip-address: false
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:localhost}
+    instance-id: ${spring.application.name}:${EUREKA_INSTANCE_HOSTNAME:localhost}
+
+    secure-port-enabled: true
+    non-secure-port-enabled: false
+
+    home-page-url: https://${eureka.instance.hostname}/
+    status-page-url: https://${eureka.instance.hostname}/actuator/info
+    health-check-url: https://${eureka.instance.hostname}/actuator/health
+
+metadata:
+  key:
+    pattern: "^[a-zA-Z_][a-zA-Z0-9_.]*$"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
