@@ -66,13 +66,6 @@ spring:
           filters:
             - RewritePath=/api/engagement-service/(?<segment>.*), /api/engagement-service/${segment}
 
-        #Warehouse Service
-        - id: warehouse-service
-          uri: lb://WAREHOUSE-SERVICE
-          predicates:
-            - Path=/api/warehouse-service/**
-          filters:
-            - RewritePath=/api/warehouse-service/(?<segment>.*), /api/warehouse-service/${segment}
           #Metadata Service (Franchise / Shift / Metadata)
         - id: shift-service
           uri: lb://METADATA-SERVICE
@@ -96,12 +89,7 @@ spring:
           filters:
             - RewritePath=/api/franchise-service/(?<segment>.*), /api/franchise-service/${segment}
 
-        - id: franchise-contract-service
-          uri: lb://FRANCHISESERVICE
-          predicates:
-            - Path=/api/contracts/**
-          filters:
-            - RewritePath=/api/contracts/(?<segment>.*), /api/contracts/${segment}
+    
 
           # Report Service
         - id: report-service
