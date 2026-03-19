@@ -1,6 +1,3 @@
-
-###################################################################
-
 server:
   address: 0.0.0.0
   port: ${PORT:8763}
@@ -34,60 +31,34 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-# ===============================================================
-# Eureka Client Configuration - Hardcoded for Render
-# Eureka Server: https://microservice-i7nc.onrender.com/eureka/
-# ===============================================================
 eureka:
   client:
     service-url:
-      # Hardcoded Eureka URL - no environment variables
-      defaultZone: https://microservice-i7nc.onrender.com/eureka/
+      defaultZone: ${EUREKA_SERVER_URL:https://microservice-i7nc.onrender.com/eureka/}
     fetch-registry: true
     register-with-eureka: true
     healthcheck:
       enabled: true
-    # Eureka client registration interval (in seconds)
     instance-info-replication-interval-seconds: 30
     registry-fetch-interval-seconds: 10
 
   instance:
-    # Hardcoded instance registration details for Render
-    app-group-name: metadata-service
-    app-name: metadata-service
-    virtual-host-name: metadata-service
-    secure-virtual-host-name: metadata-service
-    
-    # Use hostname instead of IP for Render
     prefer-ip-address: false
-    # Replace with your actual Render service URL (will be provided by Render after deployment)
-    hostname: metadata-service-render.onrender.com
-    
-    instance-id: metadata-service:${random.value}
-    
-    # HTTPS Configuration
-    secure-port-enabled: true
+    hostname: ${RENDER_EXTERNAL_HOSTNAME:localhost}
     secure-port: 443
+    secure-port-enabled: true
     non-secure-port-enabled: false
-    non-secure-port: 8080
-    
-    # Status page URLs - Hardcoded for Render
-    home-page-url: https://metadata-service-render.onrender.com/
-    status-page-url: https://metadata-service-render.onrender.com/actuator/info
-    health-check-url: https://metadata-service-render.onrender.com/actuator/health
-    
-    # Metadata map
-    metadata-map:
-      project.name: metadata-service
-      project.version: 0.0.1
+    status-page-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/actuator/info
+    health-check-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/actuator/health
+    home-page-url: https://${RENDER_EXTERNAL_HOSTNAME:localhost}/
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    instance-id: ${spring.application.name}:${RENDER_EXTERNAL_HOSTNAME:localhost}
 
 metadata:
   key:
     pattern: "^[a-zA-Z_][a-zA-Z0-9_.]*$"
 
-# ===============================================================
-# Actuator Configuration - for health checks and monitoring
-# ===============================================================
 management:
   endpoints:
     web:

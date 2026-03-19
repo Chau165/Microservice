@@ -63,77 +63,77 @@ spring:
           uri: lb://ENGAGEMENT-SERVICE
           predicates:
             - Path=/api/engagement-service/**
-          #filters:
-          #  - RewritePath=/api/engagement-service/(?<segment>.*), /api/engagement-service/${segment}
+          filters:
+            - RewritePath=/api/engagement-service/(?<segment>.*), /api/engagement-service/${segment}
 
         #Warehouse Service
         - id: warehouse-service
           uri: lb://WAREHOUSE-SERVICE
           predicates:
             - Path=/api/warehouse-service/**
-          #filters:
-          #  - RewritePath=/api/warehouse-service/(?<segment>.*), /api/warehouse-service/${segment}
+          filters:
+            - RewritePath=/api/warehouse-service/(?<segment>.*), /api/warehouse-service/${segment}
           #Metadata Service (Franchise / Shift / Metadata)
         - id: shift-service
           uri: lb://METADATA-SERVICE
           predicates:
             - Path=/api/shift-service/**
-          #filters:
-          #  - RewritePath=/api/shift-service/(?<segment>.*), /api/shift-service/${segment}
+          filters:
+            - RewritePath=/api/shift-service/(?<segment>.*), /api/shift-service/${segment}
 
         - id: metadata-service
           uri: lb://METADATA-SERVICE
           predicates:
             - Path=/api/metadata/**
-          #filters:
-          #  - RewritePath=/api/metadata/(?<segment>.*), /api/metadata/${segment}
+          filters:
+            - RewritePath=/api/metadata/(?<segment>.*), /api/metadata/${segment}
 
 
         - id: franchise-service
           uri: lb://METADATA-SERVICE
           predicates:
             - Path=/api/franchise-service/**
-          #filters:
-          #  - RewritePath=/api/franchise-service/(?<segment>.*), /api/franchise-service/${segment}
+          filters:
+            - RewritePath=/api/franchise-service/(?<segment>.*), /api/franchise-service/${segment}
 
         - id: franchise-contract-service
           uri: lb://FRANCHISESERVICE
           predicates:
             - Path=/api/contracts/**
-          #filters:
-          #  - RewritePath=/api/contracts/(?<segment>.*), /api/contracts/${segment}
+          filters:
+            - RewritePath=/api/contracts/(?<segment>.*), /api/contracts/${segment}
 
           # Report Service
         - id: report-service
           uri: lb://REPORT-SERVICE
           predicates:
             - Path=/api/report-service/**
-          #filters:
-          #  - RewritePath=/api/report-service/(?<segment>.*), /api/v1/${segment}
+          filters:
+            - RewritePath=/api/report-service/(?<segment>.*), /api/v1/${segment}
 
             # Supplier API
         - id: supplier-api
           uri: lb://WAREHOUSE-INVENTORY-SUPPLIER-SERVICE
           predicates:
             - Path=/api/suppliers/**
-          #filters:
-          #  - RewritePath=/api/suppliers/(?<segment>.*), /${segment}
+          filters:
+            - RewritePath=/api/suppliers/(?<segment>.*), /${segment}
 
           # Warehouse API
         - id: warehouse-api
           uri: lb://WAREHOUSE-INVENTORY-SUPPLIER-SERVICE
           predicates:
             - Path=/api/warehouse-service/**
-          #filters:
-          #  - RewritePath=/api/warehouse-service/(?<segment>.*), /${segment}
+          filters:
+            - RewritePath=/api/warehouse-service/(?<segment>.*), /${segment}
 
         # Inventory API
         - id: inventory-api
           uri: lb://WAREHOUSE-INVENTORY-SUPPLIER-SERVICE
           predicates:
             - Path=/api/inventory-service/**
-          #filters:
-          #  - RewritePath=/api/inventory-service/(?<segment>.*), /${segment}
+          filters:
+            - RewritePath=/api/inventory-service/(?<segment>.*), /${segment}
 
 
 
