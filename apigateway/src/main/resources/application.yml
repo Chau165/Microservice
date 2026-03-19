@@ -47,16 +47,16 @@ spring:
           uri: lb://CSFC-AUTH-SERVICE
           predicates:
             - Path=/api/auth-service/**
-          #filters:
-          #  - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
+          filters:
+            - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
 
    
         - id: authentication-service
           uri: lb://AUTHENTICATION-SERVICE
           predicates:
             - Path=/api/authentication-service/**
-          #filters:
-          #  - RewritePath=/api/authentication-service/(?<segment>.*), /api/v1/${segment}
+          filters:
+            - RewritePath=/api/authentication-service/(?<segment>.*), /api/v1/${segment}
 
         # Engagement Service
         - id: engagement-service
