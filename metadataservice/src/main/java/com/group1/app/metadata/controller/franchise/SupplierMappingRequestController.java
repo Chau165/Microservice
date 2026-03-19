@@ -18,11 +18,11 @@ public class SupplierMappingRequestController {
     private final SupplierMappingRequestService service;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_REQUEST_CREATE')")
+    @PreAuthorize("hasRole('MANAGER')")
+    // @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_REQUEST_CREATE')")
     public ApiResponse<Void> createRequest(
             @PathVariable UUID franchiseId,
-            @RequestBody CreateSupplierMappingRequest request
-    ) {
+            @RequestBody CreateSupplierMappingRequest request) {
 
         service.requestSupplierChange(franchiseId, request);
 
@@ -30,10 +30,10 @@ public class SupplierMappingRequestController {
     }
 
     @PostMapping("/decision")
-    @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_REQUEST_DECIDE')")
+    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_REQUEST_DECIDE')")
     public ApiResponse<Void> processDecision(
-            @RequestBody SupplierMappingDecisionRequest request
-    ) {
+            @RequestBody SupplierMappingDecisionRequest request) {
 
         service.processDecision(request);
 

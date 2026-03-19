@@ -20,11 +20,12 @@ public class FranchiseOpeningHourController {
     private final FranchiseOpeningHourService service;
 
     @PutMapping("/{franchiseId}/opening-hours")
-    @PreAuthorize("hasAuthority('FRANCHISE_OPENING_HOURS_UPDATE')")
+    @PreAuthorize("hasRole('MANAGER')")
+    // @PreAuthorize("hasAuthority('FRANCHISE_OPENING_HOURS_UPDATE')")
+
     public ApiResponse<OpeningHourResponse> updateOpeningHours(
             @PathVariable UUID franchiseId,
-            @Valid @RequestBody UpdateOpeningHoursRequest request
-    ) {
+            @Valid @RequestBody UpdateOpeningHoursRequest request) {
         OpeningHourResponse resp = service.updateOpeningHours(franchiseId, request);
         return ApiResponse.success(resp);
     }

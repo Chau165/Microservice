@@ -32,13 +32,12 @@ public class ConfigController {
 		this.metadataKeyConfig = metadataKeyConfig;
 	}
 
-	// GET /api/metadata/effective?key=timeout&region=VN
 	@GetMapping("/effective")
-	@PreAuthorize("hasAuthority('METADATA_CONFIG_VIEW')")
+	@PreAuthorize("hasRole('ADMIN')")
+	// @PreAuthorize("hasAuthority('METADATA_CONFIG_VIEW')")
 	public ApiResponse<EffectiveConfigDTO> getEffectiveConfig(
 			@RequestParam String key,
-			@RequestParam(required = false) String region
-	) {
+			@RequestParam(required = false) String region) {
 		// Validate key presence
 		if (key == null || key.isBlank()) {
 			throw new ApiException(ErrorCode.INVALID_KEY, "Invalid metadata key format: cannot be null or empty");
@@ -56,31 +55,31 @@ public class ConfigController {
 		}
 
 		return ApiResponse.success(
-				effectiveConfigService.getEffectiveConfig(key, region)
-		);
+				effectiveConfigService.getEffectiveConfig(key, region));
 	}
 
 	@GetMapping
-	@PreAuthorize("hasAuthority('METADATA_CONFIG_VIEW')")
+	@PreAuthorize("hasRole('ADMIN')")
+	// @PreAuthorize("hasAuthority('METADATA_CONFIG_VIEW')")
 	public ApiResponse<PageResponse<?>> getAllMetadata(
 			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size
-	) {
+			@RequestParam(defaultValue = "10") int size) {
 
-		if (page < 0) page = 0;
-		if (size <= 0) size = 10;
-		if (size > 100) size = 100;
+		if (page < 0)
+			page = 0;
+		if (size <= 0)
+			size = 10;
+		if (size > 100)
+			size = 100;
 
 		Pageable pageable = PageRequest.of(
 				page,
 				size,
-				Sort.by("createdAt").descending()
-		);
+				Sort.by("createdAt").descending());
 
 		Page<?> result = effectiveConfigService.getAllBaseConfigs(pageable);
 
 		return ApiResponse.success(
-				PageResponse.from(result)
-		);
+				PageResponse.from(result));
 	}
 }
