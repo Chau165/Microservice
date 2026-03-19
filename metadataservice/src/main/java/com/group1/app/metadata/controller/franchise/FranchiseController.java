@@ -136,13 +136,15 @@ public class FranchiseController {
         return managerUserId;
     }
 
-    @GetMapping
-    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_ALL')")
+      @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_ALL')")
     public ApiResponse<List<FranchiseResponse>> getAll() {
         return ApiResponse.success(
                 franchiseService.getAll()
         );
     }
+
 
     @PutMapping("/{id}/suspend")
     @PreAuthorize("hasAuthority('FRANCHISE_SUSPEND')")
