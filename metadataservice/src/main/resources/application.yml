@@ -1,6 +1,7 @@
 server:
   address: 0.0.0.0
   port: ${PORT:8763}
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -41,14 +42,16 @@ eureka:
   instance:
     prefer-ip-address: false
     hostname: ${EUREKA_INSTANCE_HOSTNAME:localhost}
-    instance-id: ${spring.application.name}:${EUREKA_INSTANCE_HOSTNAME:localhost}
+    instance-id: ${spring.application.name}:${SERVER_PORT:${PORT:8763}}
 
     secure-port-enabled: true
     non-secure-port-enabled: false
+    secure-port: ${PORT:8763}
 
-    home-page-url: https://${eureka.instance.hostname}/
-    status-page-url: https://${eureka.instance.hostname}/actuator/info
-    health-check-url: https://${eureka.instance.hostname}/actuator/health
+    home-page-url: https://${EUREKA_INSTANCE_HOSTNAME:localhost}/
+    status-page-url: https://${EUREKA_INSTANCE_HOSTNAME:localhost}:${PORT:8763}/actuator/info
+    health-check-url: https://${EUREKA_INSTANCE_HOSTNAME:localhost}:${PORT:8763}/actuator/health
+    health-check-url-path: /actuator/health
 
 metadata:
   key:
@@ -59,3 +62,6 @@ management:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      show-details: always
