@@ -1,36 +1,36 @@
 package com.group1.app.shift.controller;
 
+import com.group1.app.shift.dto.response.ApiResponse;
 import com.group1.app.common.security.UserPrincipal;
 import com.group1.app.shift.dto.request.StaffCreateRequest;
 import com.group1.app.shift.dto.request.StaffStatusRequest;
-import com.group1.app.common.response.ApiResponse;
 import com.group1.app.shift.dto.response.StaffResponse;
 import com.group1.app.shift.service.StaffService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/shift-service/staffs")
 @RequiredArgsConstructor
 public class StaffController {
-
     private final StaffService staffService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('STAFF_CREATE')")
     public ApiResponse<StaffResponse> createStaff(@RequestBody @Valid StaffCreateRequest request) {
-        return ApiResponse.success(staffService.createStaff(request));
+        return ApiResponse.<StaffResponse>builder().result(staffService.createStaff(request)).build();
     }
 
     @GetMapping
-    public ApiResponse<?> getAllStaff(
+    public ApiResponse<Page<StaffResponse>> getAllStaff(
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "0") int page,
@@ -40,33 +40,33 @@ public class StaffController {
         if (size <= 0) size = 10;
         if (size > 100) size = 100;
 
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
         String managerUserId = resolveManagerUserId(authentication, jwt);
 
-        return ApiResponse.builder()
-            .data(staffService.getAllStaffs(managerUserId, page, size))
+        return ApiResponse.<Page<StaffResponse>>builder()
+            .result(staffService.getAllStaffs(managerUserId, page, size))
             .build();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('STAFF_READ')")
     public ApiResponse<StaffResponse> getStaffById(@PathVariable String id) {
-        return ApiResponse.success(staffService.getStaffById(id));
+        return ApiResponse.<StaffResponse>builder().result(staffService.getStaffById(id)).build();
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('STAFF_UPDATE')")
-    public ApiResponse<StaffResponse> updateStaffById(
-            @PathVariable String id,
-            @RequestBody @Valid StaffCreateRequest request) {
-        return ApiResponse.success(staffService.updateStaff(id, request));
+    public ApiResponse<StaffResponse> updateStaffById(@PathVariable String id, @RequestBody @Valid StaffCreateRequest request) {
+        return ApiResponse.<StaffResponse>builder().result(staffService.updateStaff(id, request)).build();
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAuthority('STAFF_UPDATE')")
     public ApiResponse<StaffResponse> updateStatus(
             @PathVariable String id,
             @RequestBody @Valid StaffStatusRequest request) {
-        return ApiResponse.success(staffService.updateStatus(id, request));
+        return ApiResponse.<StaffResponse>builder()
+                .message("Staff status updated successfully")
+                .result(staffService.updateStatus(id, request))
+                .build();
     }
 
     private String resolveManagerUserId(Authentication authentication, Jwt jwt) {
@@ -91,9 +91,8 @@ public class StaffController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('STAFF_DELETE')")
     public ApiResponse<Void> deleteStaffById(@PathVariable String id) {
         staffService.deleteStaff(id);
-        return ApiResponse.success(null);
+        return ApiResponse.<Void>builder().message("Staff deleted").build();
     }
 }

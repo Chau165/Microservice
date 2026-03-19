@@ -1,6 +1,6 @@
 package com.group1.app.shift.controller;
 
-import com.group1.app.common.response.ApiResponse;
+import com.group1.app.shift.dto.response.ApiResponse;
 import com.group1.app.shift.dto.response.AttendanceReportResponse;
 import com.group1.app.shift.dto.response.DashboardOverviewResponse;
 import com.group1.app.shift.service.AttendanceService;
@@ -37,9 +37,9 @@ public class AttendanceReportController {
         int targetYear = (year != null) ? year : now.getYear();
 
         return ApiResponse.<List<AttendanceReportResponse>>builder()
-            .message("Lấy báo cáo chuyên cần thành công")
-            .data(attendanceService.getAttendanceReport(targetMonth, targetYear))
-            .build();
+                .message("Lấy báo cáo chuyên cần thành công")
+                .result(attendanceService.getAttendanceReport(targetMonth, targetYear))
+                .build();
     }
 
     // 2. API CHO TRANG DASHBOARD
@@ -55,9 +55,9 @@ public class AttendanceReportController {
         }
 
         return ApiResponse.<DashboardOverviewResponse>builder()
-            .message("Lấy dữ liệu Dashboard thành công")
-            .data(attendanceService.getDashboardOverview(date))
-            .build();
+                .message("Lấy dữ liệu Dashboard thành công")
+                .result(attendanceService.getDashboardOverview(date))
+                .build();
     }
 
     @GetMapping("/staff/{staffId}")
@@ -68,8 +68,8 @@ public class AttendanceReportController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate exactDate) {
 
         return ApiResponse.<List<com.group1.app.shift.dto.response.StaffAttendanceDetailsResponse>>builder()
-            .message("Lấy lịch sử nhân viên thành công")
-            .data(attendanceService.getStaffAttendanceHistory(staffId, month, year, exactDate))
-            .build();
+                .message("Lấy lịch sử nhân viên thành công")
+                .result(attendanceService.getStaffAttendanceHistory(staffId, month, year, exactDate))
+                .build();
     }
 }

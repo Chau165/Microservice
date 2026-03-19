@@ -20,8 +20,7 @@ public class FranchiseStaffController {
     private final FranchiseStaffService staffService;
 
     @PostMapping("/assign")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_STAFF_ASSIGN')")
+    @PreAuthorize("hasAuthority('FRANCHISE_STAFF_ASSIGN')")
     public FranchiseStaff assignStaff(@RequestBody AssignStaffRequest request) {
 
         return staffService.assignStaff(
@@ -31,8 +30,7 @@ public class FranchiseStaffController {
     }
 
     @GetMapping("/franchise/{franchiseId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_STAFF_VIEW')")
+    @PreAuthorize("hasAuthority('FRANCHISE_STAFF_VIEW')")
     public ApiResponse<List<FranchiseStaff>> getByFranchise(
             @PathVariable UUID franchiseId) {
 
@@ -42,8 +40,7 @@ public class FranchiseStaffController {
     }
 
     @GetMapping("/staff/{staffId}/franchise")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_STAFF_VIEW')")
+    @PreAuthorize("hasAuthority('FRANCHISE_STAFF_VIEW')")
     public ApiResponse<StaffWithFranchisesResponse> getFranchiseByStaffId(@PathVariable String staffId) {
 
         StaffWithFranchisesResponse result =
@@ -53,8 +50,7 @@ public class FranchiseStaffController {
     }
 
     @DeleteMapping("/remove")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_STAFF_REMOVE')")
+    @PreAuthorize("hasAuthority('FRANCHISE_STAFF_REMOVE')")
     public ApiResponse<String> removeStaff(
 
             @RequestParam UUID franchiseId,

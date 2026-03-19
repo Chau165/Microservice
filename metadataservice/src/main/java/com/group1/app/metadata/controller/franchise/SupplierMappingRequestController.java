@@ -18,8 +18,7 @@ public class SupplierMappingRequestController {
     private final SupplierMappingRequestService service;
 
     @PostMapping
-    @PreAuthorize("hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_REQUEST_CREATE')")
+    @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_REQUEST_CREATE')")
     public ApiResponse<Void> createRequest(
             @PathVariable UUID franchiseId,
             @RequestBody CreateSupplierMappingRequest request
@@ -31,8 +30,7 @@ public class SupplierMappingRequestController {
     }
 
     @PostMapping("/decision")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_REQUEST_DECIDE')")
+    @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_REQUEST_DECIDE')")
     public ApiResponse<Void> processDecision(
             @RequestBody SupplierMappingDecisionRequest request
     ) {

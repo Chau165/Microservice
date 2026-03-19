@@ -1,35 +1,47 @@
-# ================================
-# Stage 1: Build
-# ================================
-FROM eclipse-temurin:17-jdk-jammy AS build
+# ===================================================================
+# Dockerfile for Metadata Service
+# Compatible with: Render, Docker Compose, Local Development
+# ===================================================================
 
+# --- Stage 1: Build ---
+FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 
-COPY mvnw mvnw.cmd ./
-COPY .mvn .mvn
-COPY pom.xml ./
+# Copy pom.xml first to cache dependencies
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-RUN chmod +x mvnw && ./mvnw -q -B dependency:go-offline
-
+# Copy source code and build
 COPY src ./src
+RUN mvn clean package -DskipTests -B
 
-RUN ./mvnw clean package -DskipTests
-
-# ================================
-# Stage 2: Runtime
-# ================================
-FROM eclipse-temurin:17-jre-jammy
-
+# --- Stage 2: Runtime ---
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+# Add non-root user for security
+RUN addgroup -S spring && adduser -S spring -G spring
 
+# Copy jar from build stage
 COPY --from=build /app/target/*.jar app.jar
 
-RUN chown appuser:appgroup app.jar
+# Change ownership
+RUN chown -R spring:spring /app
+USER spring
 
-USER appuser
+# ===================================================================
+# Environment variables (can override on Render)
+# Note: Eureka URL is hardcoded in application.yml
+# ===================================================================
+# PORT              : Render auto-sets this env var (default 8080)
+# DATABASE_URL      : Database connection URL
+# DATABASE_USER     : Database username
+# DATABASE_PASSWORD : Database password
+# ===================================================================
 
-EXPOSE 8763
+ENV PORT=8080
 
-ENTRYPOINT ["java","-XX:+UseContainerSupport","-XX:MaxRAMPercentage=75.0","-jar","app.jar"]
+EXPOSE ${PORT}
+
+# Server port is read from ${PORT} environment variable at runtime
+ENTRYPOINT ["sh", "-c", "java -Djava.security.egd=file:/dev/./urandom -jar app.jar --server.port=${PORT}"]

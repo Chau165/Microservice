@@ -1,28 +1,23 @@
 package com.group1.app.common.security;
 
-import java.util.List;
+import java.security.Principal;
 
-public class UserPrincipal {
+public class UserPrincipal implements Principal {
 
     private final String userId;
     private final String name;
-    private final List<String> permissions;
 
-    public UserPrincipal(String userId, String name, List<String> permissions) {
+    public UserPrincipal(String userId, String name) {
         this.userId = userId;
         this.name = name;
-        this.permissions = permissions;
     }
 
     public String getUserId() {
         return userId;
     }
 
+    @Override
     public String getName() {
         return name;
-    }
-
-    public List<String> getPermissions() {
-        return permissions;
     }
 }

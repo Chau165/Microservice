@@ -23,8 +23,7 @@ public class FranchiseWarehouseMappingController {
     private final FranchiseWarehouseMappingService warehouseMappingService;
 
     @PutMapping("/franchise/{franchiseId}")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_WAREHOUSE_UPDATE')")
+    @PreAuthorize("hasAuthority('FRANCHISE_WAREHOUSE_UPDATE')")
     public ResponseEntity<ApiResponse<WarehouseMappingResponse>> updateWarehouseMapping(
             @PathVariable UUID franchiseId,
             @Valid @RequestBody UpdateWarehouseMappingRequest request,
@@ -40,8 +39,7 @@ public class FranchiseWarehouseMappingController {
     }
 
     @GetMapping("/franchise/{franchiseId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_WAREHOUSE_VIEW')")
+    @PreAuthorize("hasAuthority('FRANCHISE_WAREHOUSE_VIEW')")
     public ResponseEntity<ApiResponse<List<FranchiseWarehouseMapping>>> getByFranchise(
             @PathVariable UUID franchiseId) {
 

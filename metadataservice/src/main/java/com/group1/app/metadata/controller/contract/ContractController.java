@@ -35,16 +35,14 @@ public class ContractController {
 //    }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('CONTRACT_CREATE')")
+    @PreAuthorize("hasAuthority('CONTRACT_CREATE')")
     public ApiResponse<CreateContractResponse> create(
             @Valid @RequestBody CreateContractRequest body) {
         return ApiResponse.success(contractService.create(body));
     }
 
     @PutMapping("/{id}/activate")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('CONTRACT_ACTIVATE')")
+    @PreAuthorize("hasAuthority('CONTRACT_ACTIVATE')")
     public ApiResponse<ActivateContractResponse> activate(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal user) {
@@ -54,8 +52,7 @@ public class ContractController {
     }
 
     @PutMapping("/{id}/renew")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('CONTRACT_RENEW')")
+    @PreAuthorize("hasAuthority('CONTRACT_RENEW')")
     public ApiResponse<RenewContractResponse> renew(
             @PathVariable UUID id,
             @Valid @RequestBody RenewContractRequest body,
@@ -66,8 +63,7 @@ public class ContractController {
     }
 
     @PutMapping("/{id}/terminate")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('CONTRACT_TERMINATE')")
+    @PreAuthorize("hasAuthority('CONTRACT_TERMINATE')")
     public ApiResponse<TerminateContractResponse> terminate(
             @PathVariable UUID id,
             @Valid @RequestBody TerminateContractRequest body,
@@ -78,15 +74,13 @@ public class ContractController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('CONTRACT_VIEW')")
+    @PreAuthorize("hasAuthority('CONTRACT_VIEW')")
     public ApiResponse<ContractResponse> getById(@PathVariable UUID id) {
         return ApiResponse.success(contractService.getById(id));
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('CONTRACT_VIEW')")
+    @PreAuthorize("hasAuthority('CONTRACT_VIEW')")
     public ApiResponse<PageResponse<ContractListResponse>> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -100,8 +94,7 @@ public class ContractController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('CONTRACT_SEARCH')")
+    @PreAuthorize("hasAuthority('CONTRACT_SEARCH')")
     public ApiResponse<PageResponse<ContractListResponse>> searchContracts(
             @RequestParam(required = false) UUID franchiseId,
             @RequestParam(required = false) ContractStatus status,

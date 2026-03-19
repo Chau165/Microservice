@@ -34,8 +34,7 @@ public class ConfigController {
 
 	// GET /api/metadata/effective?key=timeout&region=VN
 	@GetMapping("/effective")
-	@PreAuthorize("hasRole('ADMIN')")
-//	@PreAuthorize("hasAuthority('METADATA_CONFIG_VIEW')")
+	@PreAuthorize("hasAuthority('METADATA_CONFIG_VIEW')")
 	public ApiResponse<EffectiveConfigDTO> getEffectiveConfig(
 			@RequestParam String key,
 			@RequestParam(required = false) String region

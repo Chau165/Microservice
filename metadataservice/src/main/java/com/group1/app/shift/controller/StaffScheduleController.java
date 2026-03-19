@@ -1,7 +1,7 @@
 package com.group1.app.shift.controller;
 
 import com.group1.app.shift.dto.request.StaffScheduleRequest;
-import com.group1.app.common.response.ApiResponse;
+import com.group1.app.shift.dto.response.ApiResponse;
 import com.group1.app.shift.dto.response.StaffScheduleResponse;
 import com.group1.app.shift.dto.response.StaffScheduleWithAttendanceResponse;
 import com.group1.app.shift.service.StaffScheduleService;
@@ -24,15 +24,15 @@ public class StaffScheduleController {
     @GetMapping("/staff/{staffId}/schedules")
     public ApiResponse<List<StaffScheduleResponse>> getSchedulesByStaff(@PathVariable String staffId) {
         return ApiResponse.<List<StaffScheduleResponse>>builder()
-            .data(staffScheduleService.getSchedulesByStaffId(staffId))
-            .build();
+                .result(staffScheduleService.getSchedulesByStaffId(staffId))
+                .build();
     }
 
     @GetMapping("/staff-schedules/{staffId}")
     public ApiResponse<List<StaffScheduleWithAttendanceResponse>> getSchedulesWithAttendance(@PathVariable String staffId) {
         return ApiResponse.<List<StaffScheduleWithAttendanceResponse>>builder()
-            .data(staffScheduleService.getSchedulesWithAttendance(staffId))
-            .build();
+                .result(staffScheduleService.getSchedulesWithAttendance(staffId))
+                .build();
     }
 
     @PostMapping("/staff/{staffId}/schedules")
@@ -42,9 +42,9 @@ public class StaffScheduleController {
         // ensure path staffId matches payload
         if (request.getStaffId() == null) request.setStaffId(staffId);
         return ApiResponse.<StaffScheduleResponse>builder()
-            .message("Schedule created")
-            .data(staffScheduleService.createSchedule(request))
-            .build();
+                .message("Schedule created")
+                .result(staffScheduleService.createSchedule(request))
+                .build();
     }
 
     @PutMapping("/schedules/{scheduleId}")
@@ -52,9 +52,9 @@ public class StaffScheduleController {
             @PathVariable String scheduleId,
             @RequestBody @Valid StaffScheduleRequest request) {
         return ApiResponse.<StaffScheduleResponse>builder()
-            .message("Schedule updated")
-            .data(staffScheduleService.updateSchedule(scheduleId, request))
-            .build();
+                .message("Schedule updated")
+                .result(staffScheduleService.updateSchedule(scheduleId, request))
+                .build();
     }
 
     @DeleteMapping("/schedules/{scheduleId}")

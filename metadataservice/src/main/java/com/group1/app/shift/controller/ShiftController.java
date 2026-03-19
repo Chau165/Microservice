@@ -1,27 +1,20 @@
 package com.group1.app.shift.controller;
 
-import com.group1.app.common.response.ApiResponse;
-import com.group1.app.common.response.PageResponse;
-import com.group1.app.common.security.UserPrincipal;
 import com.group1.app.shift.dto.request.ShiftAssignmentRequest;
 import com.group1.app.shift.dto.request.ShiftCreateRequest;
 import com.group1.app.shift.dto.request.ShiftUpdateRequest;
+import com.group1.app.shift.dto.response.ApiResponse;
 import com.group1.app.shift.dto.response.ShiftResponse;
 import com.group1.app.shift.dto.response.StaffResponse;
 import com.group1.app.shift.service.ShiftService;
-
-import org.springframework.data.domain.Page;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -36,74 +29,87 @@ public class ShiftController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAuthority('SHIFT_CREATE')")
-    public ApiResponse<ShiftResponse> createShift(@RequestBody @Valid ShiftCreateRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-
-        return ApiResponse.success(
-                shiftService.createShift(request, userPrincipal.getUserId())
-        );
+    public ApiResponse<ShiftResponse> createShift(
+            @RequestBody @Valid ShiftCreateRequest request,
+            @RequestHeader(value = "USER", defaultValue = "admin_01") String user) {
+        return ApiResponse.<ShiftResponse>builder()
+                .code(201)
+                .message("Shift created successfully")
+                .result(shiftService.createShift(request, user))
+                .build();
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('SHIFT_READ')")
     public ApiResponse<?> getAllShifts(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         if (date != null) {
-            return ApiResponse.success(shiftService.getShiftsByDate(date));
+            return ApiResponse.<List<ShiftResponse>>builder()
+                    .code(200)
+                    .message("Fetch shifts by date successfully")
+                    .result(shiftService.getShiftsByDate(date))
+                    .build();
         }
 
-        Page<ShiftResponse> result = shiftService.getAllShifts(page, size);
-        return ApiResponse.success(PageResponse.from(result));
+        return ApiResponse.<Page<ShiftResponse>>builder()
+                .code(200)
+                .message("Fetch shifts successfully")
+                .result(shiftService.getAllShifts(page, size))
+                .build();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('SHIFT_READ')")
     public ApiResponse<ShiftResponse> getShiftById(@PathVariable String id) {
-        return ApiResponse.success(shiftService.getShiftById(id));
+        return ApiResponse.<ShiftResponse>builder()
+                .code(200)
+                .message("Fetch shift details successfully")
+                .result(shiftService.getShiftById(id))
+                .build();
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('SHIFT_UPDATE')")
     public ApiResponse<ShiftResponse> updateShift(
             @PathVariable String id,
-            @RequestBody @Valid ShiftUpdateRequest request) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-
-        return ApiResponse.success(
-                shiftService.updateShift(id, request, userPrincipal.getUserId())
-        );
+            @RequestBody @Valid ShiftUpdateRequest request,
+            @RequestHeader(value = "USER", defaultValue = "admin_01") String user) {
+        return ApiResponse.<ShiftResponse>builder()
+                .code(200)
+                .message("Shift updated successfully")
+                .result(shiftService.updateShift(id, request, user))
+                .build();
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('SHIFT_DELETE')")
     public ApiResponse<Void> deleteShift(@PathVariable String id) {
         shiftService.deleteShift(id);
-        return ApiResponse.success(null);
+        return ApiResponse.<Void>builder()
+                .code(200)
+                .message("Shift deleted successfully")
+                .build();
     }
 
     @GetMapping("/{shiftId}/staff")
-    @PreAuthorize("hasAuthority('SHIFT_READ')")
-    public ApiResponse<List<StaffResponse>> getStaffByShift(@PathVariable String shiftId) {
-        return ApiResponse.success(shiftService.getStaffByShift(shiftId));
+    public ApiResponse<List<StaffResponse>> getStaffByShift(
+            @PathVariable String shiftId) {
+        return ApiResponse.<List<StaffResponse>>builder()
+                .code(200)
+                .message("Fetch staff by shift successfully")
+                .result(shiftService.getStaffByShift(shiftId))
+                .build();
     }
-
     @PostMapping("/{shiftId}/assign")
-    @PreAuthorize("hasAuthority('SHIFT_ASSIGN')")
     public ApiResponse<Void> assignStaffToShift(
             @PathVariable String shiftId,
-            @RequestBody @Valid ShiftAssignmentRequest request) {
+            @RequestBody @Valid ShiftAssignmentRequest request,
+            @RequestHeader(value = "USER", defaultValue = "admin_01") String assignedBy) { // <--- Lấy ID Admin
+        shiftService.assignStaffToShift(shiftId, request.getStaffId(), assignedBy);
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-
-        shiftService.assignStaffToShift(shiftId, request.getStaffId(), userPrincipal.getUserId());
-        return ApiResponse.success(null);
+        return ApiResponse.<Void>builder()
+                .code(200)
+                .message("Đã gán nhân viên vào ca thành công!")
+                .build();
     }
 }

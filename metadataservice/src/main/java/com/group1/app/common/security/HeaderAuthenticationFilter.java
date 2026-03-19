@@ -6,16 +6,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Collections;
 
 @Component
 public class HeaderAuthenticationFilter extends OncePerRequestFilter {
@@ -37,47 +39,43 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         String userId = request.getHeader(HEADER_USER_ID);
         String role = request.getHeader(HEADER_USER_ROLE);
         String name = request.getHeader(HEADER_USER_NAME);
-        String permissionsStr = request.getHeader(HEADER_USER_PERMISSIONS);
+        String permissionsHeader = request.getHeader(HEADER_USER_PERMISSIONS);
 
-        log.debug("Incoming headers: {}={}, {}={}, {}={}, perms={}",
-                HEADER_USER_ID, userId,
-                HEADER_USER_ROLE, role,
-                HEADER_USER_NAME, name,
-                permissionsStr
+        String requestPath = request.getRequestURI();
+        String requestMethod = request.getMethod();
+
+        boolean hasAuthorization = request.getHeader("Authorization") != null
+                || request.getHeader("authorization") != null;
+
+        log.info("HeaderAuthenticationFilter - path: {}, method: {}, headers: {}={}, {}={}, {}={}, {}={}, AuthorizationPresent={}",
+            requestPath,
+            requestMethod,
+            HEADER_USER_ID, userId,
+            HEADER_USER_ROLE, role,
+            HEADER_USER_NAME, name,
+            HEADER_USER_PERMISSIONS, permissionsHeader,
+            hasAuthorization
         );
 
-        if (userId != null && role != null) {
+        if (StringUtils.hasText(userId) && StringUtils.hasText(role)) {
 
-            Set<GrantedAuthority> authorities = new HashSet<>();
-            Set<String> permissionSet = new HashSet<>();
+            List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
-            // 1. ROLE
             String roleAuthority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
             authorities.add(new SimpleGrantedAuthority(roleAuthority));
 
-            // 2. PERMISSIONS
-            if (permissionsStr != null && !permissionsStr.isBlank()) {
-                String[] permissions = permissionsStr.split(",");
+            if (StringUtils.hasText(permissionsHeader)) {
+                String[] permissions = permissionsHeader.split(",");
                 for (String permission : permissions) {
-                    String clean = permission == null ? "" : permission.trim().toUpperCase();
-                    if (!clean.isEmpty()) {
-                        permissionSet.add(clean);
-                        authorities.add(new SimpleGrantedAuthority(clean));
+                    String trimmed = permission == null ? "" : permission.trim();
+                    if (!trimmed.isEmpty()) {
+                        authorities.add(new SimpleGrantedAuthority(trimmed));
                     }
                 }
             }
 
-            // 3. SAFE NAME
-            String safeName = (name != null && !name.isBlank()) ? name : "unknown";
+            UserPrincipal principal = new UserPrincipal(userId, name);
 
-            // 4. PRINCIPAL
-            UserPrincipal principal = new UserPrincipal(
-                    userId,
-                    safeName,
-                    new ArrayList<>(permissionSet)
-            );
-
-            // 5. AUTHENTICATION
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             principal,
@@ -85,15 +83,18 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
                             authorities
                     );
 
-            // defensive clear
-            SecurityContextHolder.clearContext();
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            log.debug("Set authentication for userId={}, role={}, permsCount={}",
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.info("Set authentication - path: {}, userId: {}, role: {}, permissionsCount: {}",
+                    requestPath,
                     userId,
                     roleAuthority,
-                    permissionSet.size()
-            );
+                    Math.max(0, authorities.size() - 1));
+            } else {
+                log.warn("Cannot authenticate from gateway headers - path: {}, userIdPresent: {}, rolePresent: {}, hasAuthorization: {}",
+                    requestPath,
+                    StringUtils.hasText(userId),
+                    StringUtils.hasText(role),
+                    hasAuthorization);
         }
 
         filterChain.doFilter(request, response);

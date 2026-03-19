@@ -30,8 +30,7 @@ public class FranchiseController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_CREATE')")
+    @PreAuthorize("hasAuthority('FRANCHISE_CREATE')")
     public ApiResponse<FranchiseResponse> create(
             @Valid @RequestBody CreateFranchiseRequest body,
             Authentication authentication) {
@@ -42,8 +41,7 @@ public class FranchiseController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_VIEW')")
+    @PreAuthorize("hasAuthority('FRANCHISE_VIEW')")
     public ApiResponse<FranchiseResponse> getById(@PathVariable UUID id) {
         return ApiResponse.success(
                 franchiseService.getById(id)
@@ -51,8 +49,7 @@ public class FranchiseController {
     }
 
     @GetMapping("/{id}/configuration")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_CONFIGURATION_VIEW')")
+    @PreAuthorize("hasAuthority('FRANCHISE_CONFIGURATION_VIEW')")
     public ApiResponse<com.group1.app.metadata.dto.franchise.response.FranchiseConfigurationResponse> getConfiguration(
             @PathVariable UUID id) {
 
@@ -62,8 +59,7 @@ public class FranchiseController {
     }
 
     @PutMapping("/{id}/identity")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_UPDATE')")
+    @PreAuthorize("hasAuthority('FRANCHISE_UPDATE')")
     public ApiResponse<FranchiseResponse> updateIdentity(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateFranchiseRequest body,
@@ -75,8 +71,7 @@ public class FranchiseController {
     }
 
     @PutMapping("/{id}/activate")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_ACTIVATE')")
+    @PreAuthorize("hasAuthority('FRANCHISE_ACTIVATE')")
     public ApiResponse<Void> activate(
             @PathVariable UUID id,
             Authentication authentication) {
@@ -86,8 +81,7 @@ public class FranchiseController {
     }
 
     @PutMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_DEACTIVATE')")
+    @PreAuthorize("hasAuthority('FRANCHISE_DEACTIVATE')")
     public ApiResponse<Void> deactivate(
             @PathVariable UUID id,
             Authentication authentication) {
@@ -97,8 +91,7 @@ public class FranchiseController {
     }
 
     @GetMapping("/manager")
-    @PreAuthorize("hasRole('MANAGER')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_MANAGER')")
+    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_MANAGER')")
     public ApiResponse<Page<FranchiseResponse>> getMyFranchises(
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt,
@@ -144,8 +137,7 @@ public class FranchiseController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_ALL')")
+    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_ALL')")
     public ApiResponse<List<FranchiseResponse>> getAll() {
         return ApiResponse.success(
                 franchiseService.getAll()
@@ -153,8 +145,7 @@ public class FranchiseController {
     }
 
     @PutMapping("/{id}/suspend")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_SUSPEND')")
+    @PreAuthorize("hasAuthority('FRANCHISE_SUSPEND')")
     public ApiResponse<String> suspendFranchise(
             @PathVariable UUID id,
             @Valid @RequestBody SuspendFranchiseRequest request,
@@ -170,8 +161,7 @@ public class FranchiseController {
     }
 
     @PostMapping("/{franchiseId}/owner")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_OWNER_ASSIGN')")
+    @PreAuthorize("hasAuthority('FRANCHISE_OWNER_ASSIGN')")
     public ApiResponse<String> assignOwner(
             @PathVariable UUID franchiseId,
             @RequestBody AssignFranchiseOwnerRequest request
@@ -189,8 +179,7 @@ public class FranchiseController {
     }
 
     @PutMapping("/{franchiseId}/change-owner")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_OWNER_CHANGE')")
+    @PreAuthorize("hasAuthority('FRANCHISE_OWNER_CHANGE')")
     public void changeOwner(
             @PathVariable UUID franchiseId,
             @RequestBody ChangeFranchiseOwnerRequest request,
@@ -207,8 +196,7 @@ public class FranchiseController {
     }
 
     @PostMapping("/{franchiseId}/menu-profile")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_MENU_ASSIGN')")
+    @PreAuthorize("hasAuthority('FRANCHISE_MENU_ASSIGN')")
     public ApiResponse<String> assignMenuProfile(
             @PathVariable UUID franchiseId,
             @Valid @RequestBody AssignMenuProfileRequest request,
@@ -225,8 +213,7 @@ public class FranchiseController {
     }
 
     @PutMapping("/{franchiseId}/suppliers/approve")
-    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_APPROVE')")
+    @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_APPROVE')")
     public ApiResponse<String> approveSupplierList(
             @PathVariable UUID franchiseId,
             @RequestBody ApproveSupplierListRequest request,

@@ -1,7 +1,9 @@
+
+###################################################################
+
 server:
   address: 0.0.0.0
   port: ${PORT:8763}
-  forward-headers-strategy: framework
 
 spring:
   application:
@@ -32,36 +34,70 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+# ===============================================================
+# Eureka Client Configuration - Hardcoded for Render
+# Eureka Server: https://microservice-i7nc.onrender.com/eureka/
+# ===============================================================
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_URL:https://microservice-59zl.onrender.com/eureka/}
+      # Hardcoded Eureka URL - no environment variables
+      defaultZone: https://microservice-i7nc.onrender.com/eureka/
     fetch-registry: true
     register-with-eureka: true
+    healthcheck:
+      enabled: true
+    # Eureka client registration interval (in seconds)
+    instance-info-replication-interval-seconds: 30
+    registry-fetch-interval-seconds: 10
 
   instance:
+    # Hardcoded instance registration details for Render
+    app-group-name: metadata-service
+    app-name: metadata-service
+    virtual-host-name: metadata-service
+    secure-virtual-host-name: metadata-service
+    
+    # Use hostname instead of IP for Render
     prefer-ip-address: false
-    hostname: ${EUREKA_INSTANCE_HOSTNAME:localhost}
-    instance-id: ${spring.application.name}:${SERVER_PORT:${PORT:8763}}
-
+    # Replace with your actual Render service URL (will be provided by Render after deployment)
+    hostname: metadata-service-render.onrender.com
+    
+    instance-id: metadata-service:${random.value}
+    
+    # HTTPS Configuration
     secure-port-enabled: true
+    secure-port: 443
     non-secure-port-enabled: false
-    secure-port: ${PORT:8763}
-
-    home-page-url: https://${EUREKA_INSTANCE_HOSTNAME:localhost}/
-    status-page-url: https://${EUREKA_INSTANCE_HOSTNAME:localhost}:${PORT:8763}/actuator/info
-    health-check-url: https://${EUREKA_INSTANCE_HOSTNAME:localhost}:${PORT:8763}/actuator/health
-    health-check-url-path: /actuator/health
+    non-secure-port: 8080
+    
+    # Status page URLs - Hardcoded for Render
+    home-page-url: https://metadata-service-render.onrender.com/
+    status-page-url: https://metadata-service-render.onrender.com/actuator/info
+    health-check-url: https://metadata-service-render.onrender.com/actuator/health
+    
+    # Metadata map
+    metadata-map:
+      project.name: metadata-service
+      project.version: 0.0.1
 
 metadata:
   key:
     pattern: "^[a-zA-Z_][a-zA-Z0-9_.]*$"
 
+# ===============================================================
+# Actuator Configuration - for health checks and monitoring
+# ===============================================================
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
