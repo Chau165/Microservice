@@ -123,6 +123,11 @@ spring:
           #filters:
            # - RewritePath=/api/inventory-service/(?<segment>.*), /${segment}
 
+      # Product Service
+        - id: product-service
+          uri: lb://PRODUCT-SERVICE
+          predicates:
+            - Path=/api/product-service/**
 
 
 app:
