@@ -39,24 +39,24 @@ spring:
           uri: lb://METADATA-SERVICE
           predicates:
             - Path=/api/internal/**
-          filters:
-            - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
+          #filters:
+          #  - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
 
           # Authentication Service
         - id: csfc-auth-service
           uri: lb://CSFC-AUTH-SERVICE
           predicates:
             - Path=/api/auth-service/**
-          #filters:
-            #- RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
+          filters:
+            - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
 
    
         - id: authentication-service
           uri: lb://AUTHENTICATION-SERVICE
           predicates:
-         - Path=/api/auth-service/**
+            - Path=/api/authentication-service/**
           filters:
-            - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
+            - RewritePath=/api/authentication-service/(?<segment>.*), /api/v1/${segment}
 
         # Engagement Service
         - id: engagement-service
