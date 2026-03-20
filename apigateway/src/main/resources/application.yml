@@ -39,8 +39,8 @@ spring:
           uri: lb://METADATA-SERVICE
           predicates:
             - Path=/api/internal/**
-          #filters:
-          #  - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
+          filters:
+            - RewritePath=/api/internal/(?<segment>.*), /internal/${segment}
 
           # Authentication Service
         - id: csfc-auth-service
