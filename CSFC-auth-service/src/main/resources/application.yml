@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: csfc-auth-service
+    name: authentication-service
 
   datasource:
     # Dùng EXTERNAL URL vì service và database khác Render account
