@@ -54,9 +54,9 @@ spring:
         - id: authentication-service
           uri: lb://AUTHENTICATION-SERVICE
           predicates:
-            - Path=/api/authentication-service/**
+         - Path=/api/auth-service/**
           filters:
-            - RewritePath=/api/authentication-service/(?<segment>.*), /api/v1/${segment}
+            - RewritePath=/api/auth-service/(?<segment>.*), /auth/${segment}
 
         # Engagement Service
         - id: engagement-service
