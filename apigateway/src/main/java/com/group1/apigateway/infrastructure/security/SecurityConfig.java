@@ -3,14 +3,15 @@ package com.group1.apigateway.infrastructure.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
@@ -23,18 +24,18 @@ import java.util.Base64;
 @Configuration
 public class SecurityConfig {
 
-        @Value("${security.jwt.secret}")
-        private String secretString;
+    @Value("${security.jwt.secret}")
+    private String secretString;
 
     @Bean
-        public ReactiveJwtDecoder jwtDecoder() {
-                byte[] keyBytes = Base64.getDecoder().decode(secretString);
-                SecretKey key = new SecretKeySpec(keyBytes, "HmacSHA256");
+    public ReactiveJwtDecoder jwtDecoder() {
+        byte[] keyBytes = Base64.getDecoder().decode(secretString);
+        SecretKey key = new SecretKeySpec(keyBytes, "HmacSHA256");
 
-                return NimbusReactiveJwtDecoder
-                                .withSecretKey(key)
-                                .macAlgorithm(MacAlgorithm.HS256)
-                                .build();
+        return NimbusReactiveJwtDecoder
+                .withSecretKey(key)
+                .macAlgorithm(MacAlgorithm.HS256)
+                .build();
     }
 
     @Bean
@@ -43,8 +44,8 @@ public class SecurityConfig {
             ServerAuthenticationEntryPoint authenticationEntryPoint,
             ServerAccessDeniedHandler accessDeniedHandler,
             InternalHeaderInjectionWebFilter internalHeaderInjectionWebFilter,
-                        IpRateLimitWebFilter ipRateLimitWebFilter,
-                        Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter
+            IpRateLimitWebFilter ipRateLimitWebFilter,
+            Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter
     ) {
 
         return http
@@ -69,7 +70,13 @@ public class SecurityConfig {
                                 "/api/*-service/*/public/**"
                         ).permitAll()
 
+                        // Public GET endpoints for guest
+                        .pathMatchers(HttpMethod.GET, "/api/products").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/products/*").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/products/*/variants").permitAll()
+
                         .pathMatchers("/api/**").authenticated()
+                        .anyExchange().permitAll()
                 )
 
                 .oauth2ResourceServer(oauth2 -> oauth2
