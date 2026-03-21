@@ -3,6 +3,7 @@ package com.group1.app.metadata.controller.franchise;
 import com.group1.app.common.response.ApiResponse;
 import com.group1.app.common.security.UserPrincipal;
 import com.group1.app.metadata.dto.franchise.request.*;
+import com.group1.app.metadata.dto.franchise.response.FranchiseConfigurationResponse;
 import com.group1.app.metadata.dto.franchise.response.FranchiseResponse;
 import com.group1.app.metadata.service.FranchiseService;
 import jakarta.validation.Valid;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.AccessDeniedException;
@@ -26,57 +28,64 @@ public class FranchiseController {
     private final FranchiseService franchiseService;
 
     private String getCurrentUser(Authentication authentication) {
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return "SYSTEM";
+        }
+
         return authentication.getName();
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_CREATE')")
-
+//    @PreAuthorize("hasAuthority('FRANCHISE_CREATE')")
     public ApiResponse<FranchiseResponse> create(
             @Valid @RequestBody CreateFranchiseRequest body,
             Authentication authentication) {
 
         return ApiResponse.success(
-                franchiseService.create(body));
+                franchiseService.create(body)
+        );
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_VIEW')")
-
+//    @PreAuthorize("hasAuthority('FRANCHISE_VIEW')")
     public ApiResponse<FranchiseResponse> getById(@PathVariable UUID id) {
         return ApiResponse.success(
-                franchiseService.getById(id));
+                franchiseService.getById(id)
+        );
     }
 
     @GetMapping("/{id}/configuration")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_CONFIGURATION_VIEW')")
-
-    public ApiResponse<com.group1.app.metadata.dto.franchise.response.FranchiseConfigurationResponse> getConfiguration(
+//    @PreAuthorize("hasAuthority('FRANCHISE_CONFIGURATION_VIEW')")
+    public ApiResponse<FranchiseConfigurationResponse> getConfiguration(
             @PathVariable UUID id) {
 
         return ApiResponse.success(
-                franchiseService.getConfiguration(id));
+                franchiseService.getConfiguration(id)
+        );
     }
 
     @PutMapping("/{id}/identity")
     @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_UPDATE')")
-
+//    @PreAuthorize("hasAuthority('FRANCHISE_UPDATE')")
     public ApiResponse<FranchiseResponse> updateIdentity(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateFranchiseRequest body,
             Authentication authentication) {
 
         return ApiResponse.success(
-                franchiseService.updateIdentity(id, body, getCurrentUser(authentication)));
+                franchiseService.updateIdentity(id, body, getCurrentUser(authentication))
+        );
     }
 
     @PutMapping("/{id}/activate")
     @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_ACTIVATE')")
+//    @PreAuthorize("hasAuthority('FRANCHISE_ACTIVATE')")
     public ApiResponse<Void> activate(
             @PathVariable UUID id,
             Authentication authentication) {
@@ -87,7 +96,7 @@ public class FranchiseController {
 
     @PutMapping("/{id}/deactivate")
     @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_DEACTIVATE')")
+//    @PreAuthorize("hasAuthority('FRANCHISE_DEACTIVATE')")
     public ApiResponse<Void> deactivate(
             @PathVariable UUID id,
             Authentication authentication) {
@@ -98,29 +107,28 @@ public class FranchiseController {
 
     @GetMapping("/manager")
     @PreAuthorize("hasRole('MANAGER')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_VIEW_MANAGER')")
+//    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_MANAGER')")
     public ApiResponse<Page<FranchiseResponse>> getMyFranchises(
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        if (page < 0)
-            page = 0;
-        if (size <= 0)
-            size = 10;
-        if (size > 100)
-            size = 100;
+        if (page < 0) page = 0;
+        if (size <= 0) size = 10;
+        if (size > 100) size = 100;
 
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by("createdAt").descending());
+                Sort.by("createdAt").descending()
+        );
 
         String managerUserId = resolveManagerUserId(authentication, jwt);
 
         return ApiResponse.success(
-                franchiseService.getAllByManager(managerUserId, pageable));
+                franchiseService.getAllByManager(managerUserId, pageable)
+        );
     }
 
     private String resolveManagerUserId(Authentication authentication, Jwt jwt) {
@@ -145,18 +153,17 @@ public class FranchiseController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_VIEW_ALL')")
-
+//    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_ALL')")
     public ApiResponse<List<FranchiseResponse>> getAll() {
         return ApiResponse.success(
-                franchiseService.getAll());
+                franchiseService.getAll()
+        );
     }
 
     @PutMapping("/{id}/suspend")
     @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_SUSPEND')")
-
+//    @PreAuthorize("hasAuthority('FRANCHISE_SUSPEND')")
     public ApiResponse<String> suspendFranchise(
             @PathVariable UUID id,
             @Valid @RequestBody SuspendFranchiseRequest request,
@@ -165,76 +172,81 @@ public class FranchiseController {
         franchiseService.suspend(
                 id,
                 request.reason(),
-                getCurrentUser(authentication));
+                getCurrentUser(authentication)
+        );
 
         return ApiResponse.success("Franchise suspended successfully.");
     }
 
     @PostMapping("/{franchiseId}/owner")
     @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_OWNER_ASSIGN')")
-
+//    @PreAuthorize("hasAuthority('FRANCHISE_OWNER_ASSIGN')")
     public ApiResponse<String> assignOwner(
             @PathVariable UUID franchiseId,
-            @RequestBody AssignFranchiseOwnerRequest request) {
+            @RequestBody AssignFranchiseOwnerRequest request
+    ) {
 
         franchiseService.assignOwner(
                 franchiseId,
                 request.ownerId(),
                 request.role(),
                 request.effectiveDate(),
-                "admin");
+                "admin"
+        );
 
         return ApiResponse.success("Franchise owner assigned successfully.");
     }
 
     @PutMapping("/{franchiseId}/change-owner")
     @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_OWNER_CHANGE')")
-
+//    @PreAuthorize("hasAuthority('FRANCHISE_OWNER_CHANGE')")
     public void changeOwner(
             @PathVariable UUID franchiseId,
             @RequestBody ChangeFranchiseOwnerRequest request,
-            @RequestHeader("X-User") String changedBy) {
+            @RequestHeader("X-User") String changedBy
+    ) {
 
         franchiseService.changeOwner(
                 franchiseId,
                 request.newOwnerId(),
                 request.role(),
                 request.effectiveDate(),
-                changedBy);
+                changedBy
+        );
     }
 
     @PostMapping("/{franchiseId}/menu-profile")
     @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_MENU_ASSIGN')")
-
+//    @PreAuthorize("hasAuthority('FRANCHISE_MENU_ASSIGN')")
     public ApiResponse<String> assignMenuProfile(
             @PathVariable UUID franchiseId,
             @Valid @RequestBody AssignMenuProfileRequest request,
-            Authentication authentication) {
+            Authentication authentication
+    ) {
 
         franchiseService.assignMenuProfile(
                 franchiseId,
                 request.menuProfileId(),
-                getCurrentUser(authentication));
+                getCurrentUser(authentication)
+        );
 
         return ApiResponse.success("Menu profile assigned successfully.");
     }
 
     @PutMapping("/{franchiseId}/suppliers/approve")
     @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_APPROVE')")
-
+//    @PreAuthorize("hasAuthority('FRANCHISE_SUPPLIER_APPROVE')")
     public ApiResponse<String> approveSupplierList(
             @PathVariable UUID franchiseId,
             @RequestBody ApproveSupplierListRequest request,
-            Authentication authentication) {
+            Authentication authentication
+    ) {
 
         franchiseService.approveSupplierList(
                 franchiseId,
                 request.supplierIds(),
-                authentication.getName());
+                authentication.getName()
+        );
 
         return ApiResponse.success("Supplier list approved successfully.");
     }

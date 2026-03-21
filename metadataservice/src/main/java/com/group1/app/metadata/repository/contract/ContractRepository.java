@@ -30,6 +30,8 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
 
     boolean existsByFranchiseIdAndStatus(UUID franchiseId, ContractStatus status);
 
+//    boolean existsByFranchiseCodeAndStatus(String franchiseCode, ContractStatus status);
+
     @Query(value = """
         SELECT c FROM Contract c
         JOIN FETCH c.franchise f
@@ -55,5 +57,38 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
 
     @EntityGraph(attributePaths = "franchise")
     Page<Contract> findAll(Pageable pageable);
+
+    @Query(value = """
+        SELECT c FROM Contract c
+        LEFT JOIN c.franchise f
+        WHERE (COALESCE(:contractNumber, '') = '' OR LOWER(c.contractNumber) LIKE LOWER(CONCAT('%', :contractNumber, '%')))
+        AND (:status IS NULL OR c.status = :status)
+        AND (COALESCE(:franchiseCode, '') = '' OR LOWER(f.franchiseCode) LIKE LOWER(CONCAT('%', :franchiseCode, '%')))
+        AND (COALESCE(:createdBy, '') = '' OR LOWER(c.createdBy) LIKE LOWER(CONCAT('%', :createdBy, '%')))
+        AND (COALESCE(:activatedBy, '') = '' OR LOWER(c.activatedBy) LIKE LOWER(CONCAT('%', :activatedBy, '%')))
+        AND (COALESCE(:renewedBy, '') = '' OR LOWER(c.renewedBy) LIKE LOWER(CONCAT('%', :renewedBy, '%')))
+        AND (COALESCE(:terminatedBy, '') = '' OR LOWER(c.terminatedBy) LIKE LOWER(CONCAT('%', :terminatedBy, '%')))
+    """,
+            countQuery = """
+        SELECT COUNT(c) FROM Contract c
+        LEFT JOIN c.franchise f
+        WHERE (COALESCE(:contractNumber, '') = '' OR LOWER(c.contractNumber) LIKE LOWER(CONCAT('%', :contractNumber, '%')))
+        AND (:status IS NULL OR c.status = :status)
+        AND (COALESCE(:franchiseCode, '') = '' OR LOWER(f.franchiseCode) LIKE LOWER(CONCAT('%', :franchiseCode, '%')))
+        AND (COALESCE(:createdBy, '') = '' OR LOWER(c.createdBy) LIKE LOWER(CONCAT('%', :createdBy, '%')))
+        AND (COALESCE(:activatedBy, '') = '' OR LOWER(c.activatedBy) LIKE LOWER(CONCAT('%', :activatedBy, '%')))
+        AND (COALESCE(:renewedBy, '') = '' OR LOWER(c.renewedBy) LIKE LOWER(CONCAT('%', :renewedBy, '%')))
+        AND (COALESCE(:terminatedBy, '') = '' OR LOWER(c.terminatedBy) LIKE LOWER(CONCAT('%', :terminatedBy, '%')))
+    """)
+    Page<Contract> advancedSearch(
+            @Param("contractNumber") String contractNumber,
+            @Param("status") ContractStatus status,
+            @Param("franchiseCode") String franchiseCode,
+            @Param("createdBy") String createdBy,
+            @Param("activatedBy") String activatedBy,
+            @Param("renewedBy") String renewedBy,
+            @Param("terminatedBy") String terminatedBy,
+            Pageable pageable
+    );
 
 }

@@ -24,7 +24,7 @@ public class FranchiseWarehouseMappingController {
 
     @PutMapping("/franchise/{franchiseId}")
     @PreAuthorize("hasRole('ADMIN')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_WAREHOUSE_UPDATE')")
+//    @PreAuthorize("hasAuthority('FRANCHISE_WAREHOUSE_UPDATE')")
     public ResponseEntity<ApiResponse<WarehouseMappingResponse>> updateWarehouseMapping(
             @PathVariable UUID franchiseId,
             @Valid @RequestBody UpdateWarehouseMappingRequest request,
@@ -33,18 +33,20 @@ public class FranchiseWarehouseMappingController {
         WarehouseMappingResponse result = warehouseMappingService.updateWarehouseMapping(
                 franchiseId,
                 request.warehouseId(),
-                authentication.getName());
+                authentication.getName()
+        );
 
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @GetMapping("/franchise/{franchiseId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-    // @PreAuthorize("hasAuthority('FRANCHISE_WAREHOUSE_VIEW')")
+//    @PreAuthorize("hasAuthority('FRANCHISE_WAREHOUSE_VIEW')")
     public ResponseEntity<ApiResponse<List<FranchiseWarehouseMapping>>> getByFranchise(
             @PathVariable UUID franchiseId) {
 
-        List<FranchiseWarehouseMapping> result = warehouseMappingService.getAllByFranchiseId(franchiseId);
+        List<FranchiseWarehouseMapping> result =
+                warehouseMappingService.getAllByFranchiseId(franchiseId);
 
         return ResponseEntity.ok(ApiResponse.success(result));
     }

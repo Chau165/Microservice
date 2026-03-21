@@ -34,4 +34,15 @@ public interface ContractService {
             UUID franchiseId, ContractStatus status,
             LocalDate startDateFrom, LocalDate startDateTo, Pageable pageable);
 
+    Page<ContractListResponse> searchByMultipleCriteria(
+            String contractNumber,
+            ContractStatus status,
+            String franchiseCode,
+            String createdBy,
+            String activatedBy,
+            String renewedBy,
+            String terminatedBy,
+            Pageable pageable
+    );
+
 }

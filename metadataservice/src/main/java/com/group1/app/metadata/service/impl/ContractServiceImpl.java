@@ -247,4 +247,30 @@ public class ContractServiceImpl implements ContractService {
         return contractRepository.searchContracts(franchiseId, status, startDateFrom, startDateTo, pageable)
                 .map(contractMapper::toListResponse);
     }
+
+    @Override
+    @Transactional
+    public Page<ContractListResponse> searchByMultipleCriteria(
+            String contractNumber,
+            ContractStatus status,
+            String franchiseCode,
+            String createdBy,
+            String activatedBy,
+            String renewedBy,
+            String terminatedBy,
+            Pageable pageable
+    ) {
+
+        return contractRepository.advancedSearch(
+                contractNumber,
+                status,
+                franchiseCode,
+                createdBy,
+                activatedBy,
+                renewedBy,
+                terminatedBy,
+                pageable
+        ).map(contractMapper::toListResponse);
+    }
+
 }

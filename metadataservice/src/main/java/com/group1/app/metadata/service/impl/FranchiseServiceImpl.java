@@ -146,15 +146,6 @@ public class FranchiseServiceImpl implements FranchiseService {
             throw new ApiException(ErrorCode.CANNOT_ACTIVATE_NO_ACTIVE_CONTRACT);
         }
 
-        Optional<OperationalConfig> cfgOpt = configRepository.findByFranchiseId(franchise.getId());
-        if (cfgOpt.isEmpty()) {
-            throw new ApiException(ErrorCode.OPERATIONAL_CONFIG_INCOMPLETE);
-        }
-        OperationalConfig cfg = cfgOpt.get();
-        if (!(cfg.isOpeningHoursConfigured() && cfg.isMenuProfileAssigned() && cfg.isWarehouseMappingConfigured())) {
-            throw new ApiException(ErrorCode.OPERATIONAL_CONFIG_INCOMPLETE);
-        }
-
         FranchiseStatus oldStatus = franchise.getStatus();
         franchise.setStatus(FranchiseStatus.LIVE);
         franchiseRepository.save(franchise);
@@ -206,6 +197,16 @@ public class FranchiseServiceImpl implements FranchiseService {
                         LocalDateTime.now()
                 )
         );
+
+//        eventPublisher.publishEvent(
+//                new FranchiseSuspendedEvent(
+//                        franchise.getId(),
+//                        "Deactivated by user", // Hoặc thêm reason vào tham số của hàm deactivate
+//                        deactivatedBy,
+//                        LocalDateTime.now()
+//                )
+//        );
+
     }
 
     @Override

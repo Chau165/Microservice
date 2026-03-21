@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class BaseConfigServiceImpl implements BaseConfigService {
+
     private final BaseConfigRepository repo;
 
     @Override
@@ -28,6 +29,8 @@ public class BaseConfigServiceImpl implements BaseConfigService {
                     .orElseThrow(() -> new ApiException(ErrorCode.CONFIG_NOT_FOUND));
 
             config.setConfigValue(value);
+
+            repo.save(config);
 
         } catch (ObjectOptimisticLockingFailureException ex) {
             throw new ApiException(ErrorCode.CONFIG_CONFLICT);
