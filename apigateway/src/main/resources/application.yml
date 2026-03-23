@@ -129,6 +129,13 @@ spring:
           predicates:
             - Path=/api/products/**
 
+        - id: notification-service
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/notification-service/**
+          #filters:
+          #  - RewritePath=/api/notification-service/(?<segment>.*), /api/v1/${segment
+
 
 app:
   version: 1.0.0
