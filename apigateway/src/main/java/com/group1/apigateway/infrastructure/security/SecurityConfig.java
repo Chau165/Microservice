@@ -71,7 +71,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // Cart endpoints for guest
-                        .pathMatchers("/api/cart/**").permitAll()
+                        .pathMatchers("/api/products/cart/**").permitAll()
 
                                      // Invoice endpoints without authorization
                         .pathMatchers(HttpMethod.POST,
