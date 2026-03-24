@@ -73,6 +73,18 @@ public class SecurityConfig {
                         // Cart endpoints for guest
                         .pathMatchers("/api/cart/**").permitAll()
 
+                                     // Invoice endpoints without authorization
+                        .pathMatchers(HttpMethod.POST,
+                            "/api/products/invoices/*/points",
+                            "/api/products/invoices/*/coupon",
+                            "/api/products/invoices/*/checkout",
+                            "/api/products/invoices/create/*"
+                        ).permitAll()
+                        .pathMatchers(HttpMethod.GET,
+                            "/api/products/invoices",
+                            "/api/products/invoices/*"
+                        ).permitAll()
+
                         // Public GET endpoints for guest
                         .pathMatchers(HttpMethod.GET, "/api/products").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/products/*").permitAll()
