@@ -2,6 +2,7 @@ package com.group1.app.metadata.service.impl;
 
 import com.group1.app.common.exception.ApiException;
 import com.group1.app.common.exception.ErrorCode;
+import com.group1.app.metadata.dto.franchise.response.FranchiseWarehouseMappingItemResponse;
 import com.group1.app.metadata.dto.franchise.response.WarehouseMappingResponse;
 import com.group1.app.metadata.entity.franchise.Franchise;
 import com.group1.app.metadata.entity.franchise.FranchiseWarehouseMapping;
@@ -162,12 +163,22 @@ public class FranchiseWarehouseMappingServiceImpl implements FranchiseWarehouseM
 
     @Override
     @Transactional(readOnly = true)
-    public List<FranchiseWarehouseMapping> getAllByFranchiseId(UUID franchiseId) {
+    public List<FranchiseWarehouseMappingItemResponse> getAllByFranchiseId(UUID franchiseId) {
 
         if (!franchiseRepository.existsById(franchiseId)) {
             throw new ApiException(ErrorCode.FR_404_FRANCHISE_NOT_FOUND);
         }
 
-        return warehouseMappingRepository.findAllByFranchise_Id(franchiseId);
+        return warehouseMappingRepository.findAllByFranchise_Id(franchiseId)
+                .stream()
+                .map(mapping -> new FranchiseWarehouseMappingItemResponse(
+                        mapping.getId(),
+                        mapping.getWarehouseId(),
+                        mapping.getStatus().name(),
+                        mapping.getAssignedAt(),
+                        mapping.getUnassignedAt(),
+                        mapping.getFranchise() != null ? mapping.getFranchise().getId() : null
+                ))
+                .toList();
     }
 }

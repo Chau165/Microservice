@@ -3,8 +3,8 @@ package com.group1.app.metadata.controller.franchise;
 import com.group1.app.common.response.ApiResponse;
 import com.group1.app.metadata.dto.franchise.request.CreateWarehouseMappingRequest;
 import com.group1.app.metadata.dto.franchise.request.UpdateWarehouseMappingRequest;
+import com.group1.app.metadata.dto.franchise.response.FranchiseWarehouseMappingItemResponse;
 import com.group1.app.metadata.dto.franchise.response.WarehouseMappingResponse;
-import com.group1.app.metadata.entity.franchise.FranchiseWarehouseMapping;
 import com.group1.app.metadata.service.FranchiseWarehouseMappingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -60,10 +60,10 @@ public class FranchiseWarehouseMappingController {
     @GetMapping("/franchise/{franchiseId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
 //    @PreAuthorize("hasAuthority('FRANCHISE_WAREHOUSE_VIEW')")
-    public ResponseEntity<ApiResponse<List<FranchiseWarehouseMapping>>> getByFranchise(
+    public ResponseEntity<ApiResponse<List<FranchiseWarehouseMappingItemResponse>>> getByFranchise(
             @PathVariable UUID franchiseId) {
 
-        List<FranchiseWarehouseMapping> result =
+        List<FranchiseWarehouseMappingItemResponse> result =
                 warehouseMappingService.getAllByFranchiseId(franchiseId);
 
         return ResponseEntity.ok(ApiResponse.success(result));
