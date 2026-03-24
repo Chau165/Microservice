@@ -43,10 +43,7 @@ public class FranchiseWarehouseMappingServiceImpl implements FranchiseWarehouseM
             throw new ApiException(ErrorCode.INVALID_FRANCHISE_STATUS);
         }
 
-        var warehouse = warehouseClient.getWarehouseById(warehouseId);
-        if (warehouse == null) {
-            throw new ApiException(ErrorCode.WM_001_WAREHOUSE_NOT_FOUND);
-        }
+                // Warehouse existence check removed: accept warehouseId as-is from client
 
         // Check if there's already an active mapping for this franchise
         var activeMappingOpt = warehouseMappingRepository.findByFranchise_IdAndStatus(
@@ -102,10 +99,7 @@ public class FranchiseWarehouseMappingServiceImpl implements FranchiseWarehouseM
             throw new ApiException(ErrorCode.INVALID_FRANCHISE_STATUS);
         }
 
-        var warehouse = warehouseClient.getWarehouseById(warehouseId);
-        if (warehouse == null) {
-            throw new ApiException(ErrorCode.WM_001_WAREHOUSE_NOT_FOUND);
-        }
+                // Warehouse existence check removed: accept warehouseId as-is from client
 
         String oldWarehouseId = null;
 
