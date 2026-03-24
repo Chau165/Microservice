@@ -34,6 +34,65 @@ public class FranchiseWarehouseMappingServiceImpl implements FranchiseWarehouseM
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
+    public WarehouseMappingResponse createWarehouseMapping(UUID franchiseId, String warehouseId, String createdBy) {
+
+        Franchise franchise = franchiseRepository.findById(franchiseId)
+                .orElseThrow(() -> new ApiException(ErrorCode.FR_404_FRANCHISE_NOT_FOUND));
+
+        if (franchise.getStatus().name().equals("SUSPENDED")) {
+            throw new ApiException(ErrorCode.INVALID_FRANCHISE_STATUS);
+        }
+
+        var warehouse = warehouseClient.getWarehouseById(warehouseId);
+        if (warehouse == null) {
+            throw new ApiException(ErrorCode.WM_001_WAREHOUSE_NOT_FOUND);
+        }
+
+        // Check if there's already an active mapping for this franchise
+        var activeMappingOpt = warehouseMappingRepository.findByFranchise_IdAndStatus(
+                franchiseId,
+                FranchiseWarehouseMappingStatus.ACTIVE
+        );
+
+        if (activeMappingOpt.isPresent()) {
+            throw new ApiException(ErrorCode.WM_003_ACTIVE_WAREHOUSE_MAPPING_EXISTS);
+        }
+
+        // Create new mapping
+        FranchiseWarehouseMapping newMapping = FranchiseWarehouseMapping.builder()
+                .franchise(franchise)
+                .warehouseId(warehouseId)
+                .status(FranchiseWarehouseMappingStatus.ACTIVE)
+                .assignedAt(Instant.now())
+                .build();
+        warehouseMappingRepository.save(newMapping);
+
+        // Update OperationalConfig flag
+        operationalConfigRepository.findByFranchiseId(franchiseId)
+                .ifPresent(config -> {
+                    config.setWarehouseMappingConfigured(true);
+                    operationalConfigRepository.save(config);
+                });
+
+        eventPublisher.publishEvent(
+                new WarehouseMappingChangedEvent(
+                        franchiseId,
+                        null,
+                        warehouseId,
+                        createdBy,
+                        LocalDateTime.now()
+                )
+        );
+
+        return new WarehouseMappingResponse(
+                franchiseId,
+                warehouseId,
+                FranchiseWarehouseMappingStatus.ACTIVE.name(),
+                newMapping.getAssignedAt()
+        );
+    }
+
+    @Override
     public WarehouseMappingResponse updateWarehouseMapping(UUID franchiseId, String warehouseId, String changedBy) {
 
         Franchise franchise = franchiseRepository.findById(franchiseId)

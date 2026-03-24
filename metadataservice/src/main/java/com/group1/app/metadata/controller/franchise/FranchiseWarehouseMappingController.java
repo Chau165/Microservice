@@ -1,12 +1,14 @@
 package com.group1.app.metadata.controller.franchise;
 
 import com.group1.app.common.response.ApiResponse;
+import com.group1.app.metadata.dto.franchise.request.CreateWarehouseMappingRequest;
 import com.group1.app.metadata.dto.franchise.request.UpdateWarehouseMappingRequest;
 import com.group1.app.metadata.dto.franchise.response.WarehouseMappingResponse;
 import com.group1.app.metadata.entity.franchise.FranchiseWarehouseMapping;
 import com.group1.app.metadata.service.FranchiseWarehouseMappingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -21,6 +23,22 @@ import java.util.UUID;
 public class FranchiseWarehouseMappingController {
 
     private final FranchiseWarehouseMappingService warehouseMappingService;
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasAuthority('FRANCHISE_WAREHOUSE_CREATE')")
+    public ResponseEntity<ApiResponse<WarehouseMappingResponse>> createWarehouseMapping(
+            @Valid @RequestBody CreateWarehouseMappingRequest request,
+            Authentication authentication) {
+
+        WarehouseMappingResponse result = warehouseMappingService.createWarehouseMapping(
+                request.franchiseId(),
+                request.warehouseId(),
+                authentication.getName()
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(result));
+    }
 
     @PutMapping("/franchise/{franchiseId}")
     @PreAuthorize("hasRole('ADMIN')")

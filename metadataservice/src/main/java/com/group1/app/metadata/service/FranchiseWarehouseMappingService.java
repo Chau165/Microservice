@@ -8,6 +8,8 @@ import java.util.UUID;
 
 public interface FranchiseWarehouseMappingService {
 
+    WarehouseMappingResponse createWarehouseMapping(UUID franchiseId, String warehouseId, String createdBy);
+
     WarehouseMappingResponse updateWarehouseMapping(UUID franchiseId, String warehouseId, String changedBy);
 
     List<FranchiseWarehouseMapping> getAllByFranchiseId(UUID franchiseId);
