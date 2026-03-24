@@ -57,6 +57,8 @@ public class SecurityConfig {
                 )
 
                 .authorizeExchange(ex -> ex
+
+                        // ================= PUBLIC =================
                         .pathMatchers(
                                 "/api/auth/**",
                                 "/api/auth-service/**",
@@ -70,26 +72,34 @@ public class SecurityConfig {
                                 "/api/*-service/*/public/**"
                         ).permitAll()
 
-                        // Cart endpoints for guest
-                        .pathMatchers("/api/products/cart/**").permitAll()
+                        // ================= CART (GUEST) =================
+                        .pathMatchers(HttpMethod.GET, "/api/products/cart").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/products/cart/add").permitAll()
+                        .pathMatchers(HttpMethod.PUT, "/api/products/cart/item").permitAll()
+                        .pathMatchers(HttpMethod.DELETE, "/api/products/cart/item/*").permitAll()
 
-                                     // Invoice endpoints without authorization
+                        // fallback (nếu có endpoint khác)
+                        .pathMatchers("/api/products/cart", "/api/products/cart/**").permitAll()
+
+                        // ================= INVOICE =================
                         .pathMatchers(HttpMethod.POST,
-                            "/api/products/invoices/*/points",
-                            "/api/products/invoices/*/coupon",
-                            "/api/products/invoices/*/checkout",
-                            "/api/products/invoices/create/*"
-                        ).permitAll()
-                        .pathMatchers(HttpMethod.GET,
-                            "/api/products/invoices",
-                            "/api/products/invoices/*"
+                                "/api/products/invoices/*/points",
+                                "/api/products/invoices/*/coupon",
+                                "/api/products/invoices/*/checkout",
+                                "/api/products/invoices/create/*"
                         ).permitAll()
 
-                        // Public GET endpoints for guest
+                        .pathMatchers(HttpMethod.GET,
+                                "/api/products/invoices",
+                                "/api/products/invoices/*"
+                        ).permitAll()
+
+                        // ================= PRODUCT PUBLIC =================
                         .pathMatchers(HttpMethod.GET, "/api/products").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/products/*").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/products/*/variants").permitAll()
 
+                        // ================= DEFAULT =================
                         .pathMatchers("/api/**").authenticated()
                         .anyExchange().permitAll()
                 )
@@ -99,6 +109,7 @@ public class SecurityConfig {
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
                 )
 
+                // ================= FILTER =================
                 .addFilterAt(ipRateLimitWebFilter, SecurityWebFiltersOrder.FIRST)
                 .addFilterAfter(internalHeaderInjectionWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)
 
