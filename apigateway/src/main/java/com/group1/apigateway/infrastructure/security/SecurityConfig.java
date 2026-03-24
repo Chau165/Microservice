@@ -70,6 +70,9 @@ public class SecurityConfig {
                                 "/api/*-service/*/public/**"
                         ).permitAll()
 
+                        // Cart endpoints for guest
+                        .pathMatchers("/api/cart/**").permitAll()
+
                         // Public GET endpoints for guest
                         .pathMatchers(HttpMethod.GET, "/api/products").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/products/*").permitAll()
