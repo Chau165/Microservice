@@ -25,9 +25,20 @@ public class StaffController {
     private final StaffService staffService;
 
     @PostMapping
-    public ApiResponse<StaffResponse> createStaff(@RequestBody @Valid StaffCreateRequest request) {
-        return ApiResponse.<StaffResponse>builder().result(staffService.createStaff(request)).build();
+    public ApiResponse<StaffResponse> createStaff(
+            @RequestBody @Valid StaffCreateRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        String managerUserId = jwt.getClaimAsString("userId");
+        if (managerUserId == null) managerUserId = jwt.getSubject();
+
+        request.setBranchId(managerUserId);
+
+        return ApiResponse.<StaffResponse>builder()
+                .result(staffService.createStaff(request))
+                .build();
     }
+
 
     @GetMapping
     public ApiResponse<Page<StaffResponse>> getAllStaff(
