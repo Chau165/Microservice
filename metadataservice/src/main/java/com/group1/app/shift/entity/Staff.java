@@ -38,6 +38,9 @@ public class Staff {
     @Column(name = "user_id")
     String userId;
 
+    @Column(name = "manager_user_id")
+    String managerUserId;
+
     @Column(unique = true)
     String phone;
 

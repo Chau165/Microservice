@@ -32,7 +32,8 @@ public class StaffController {
         String managerUserId = jwt.getClaimAsString("userId");
         if (managerUserId == null) managerUserId = jwt.getSubject();
 
-        request.setBranchId(managerUserId);
+        // Set managerUserId from JWT (not branchId!)
+        request.setManagerUserId(managerUserId);
 
         return ApiResponse.<StaffResponse>builder()
                 .result(staffService.createStaff(request))

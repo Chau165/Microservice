@@ -51,6 +51,7 @@ public class StaffServiceImpl implements StaffService {
                 .branchId(request.getBranchId())
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
+                .managerUserId(request.getManagerUserId())  // ← ADD THIS
                 .build();
 
         // 2. Tự động sinh Staff Code ngay từ đầu (VD: NVA-54321)
@@ -109,17 +110,8 @@ public class StaffServiceImpl implements StaffService {
     public Page<StaffResponse> getAllStaffs(String managerUserId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
-        Optional<Staff> managerOpt = staffRepository.findByUserId(managerUserId);
-        if (managerOpt.isEmpty()) {
-            return Page.empty(pageable);
-        }
-
-        String branchId = managerOpt.get().getBranchId();
-        if (branchId == null || branchId.isBlank()) {
-            return Page.empty(pageable);
-        }
-
-        return staffRepository.findAllByBranchId(branchId, pageable).map(this::mapToResponse);
+        // Filter staffs by managerUserId directly
+        return staffRepository.findByManagerUserId(managerUserId, pageable).map(this::mapToResponse);
     }
 
 
