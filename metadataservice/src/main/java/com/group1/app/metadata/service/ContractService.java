@@ -3,6 +3,7 @@ package com.group1.app.metadata.service;
 import com.group1.app.metadata.dto.contract.request.CreateContractRequest;
 import com.group1.app.metadata.dto.contract.request.RenewContractRequest;
 import com.group1.app.metadata.dto.contract.request.TerminateContractRequest;
+import com.group1.app.metadata.dto.contract.request.UpdateContractRequest;
 import com.group1.app.metadata.dto.contract.response.*;
 import com.group1.app.metadata.entity.contract.Contract;
 import com.group1.app.metadata.entity.contract.ContractStatus;
@@ -44,5 +45,9 @@ public interface ContractService {
             String terminatedBy,
             Pageable pageable
     );
+
+    ContractResponse update(UUID id, UpdateContractRequest request, String updatedBy);
+
+    void delete(UUID id, String deletedBy);
 
 }

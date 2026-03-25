@@ -6,6 +6,7 @@ import com.group1.app.common.util.MetadataHelper;
 import com.group1.app.metadata.dto.contract.request.CreateContractRequest;
 import com.group1.app.metadata.dto.contract.request.RenewContractRequest;
 import com.group1.app.metadata.dto.contract.request.TerminateContractRequest;
+import com.group1.app.metadata.dto.contract.request.UpdateContractRequest;
 import com.group1.app.metadata.dto.contract.response.*;
 import com.group1.app.metadata.entity.contract.Contract;
 import com.group1.app.metadata.entity.contract.ContractAudit;
@@ -101,7 +102,7 @@ public class ContractServiceImpl implements ContractService {
         // 6. Ánh xạ và thiết lập giá trị từ Metadata
         Contract contract = contractMapper.toEntity(request);
         contract.setFranchise(franchise);
-        contract.setRoyaltyRate(royalty);
+        contract.setRoyaltyRate(royalty.stripTrailingZeros());
         contract.setAutoOrderEnabled(metadataHelper.getBoolean("CONTRACT_AUTO_ORDER_DEFAULT", context, true));
 
         contract = contractRepository.save(contract);
@@ -154,19 +155,39 @@ public class ContractServiceImpl implements ContractService {
             throw new ApiException(ErrorCode.CT_006_INVALID_CONTRACT_STATUS);
         }
 
+        String context = contract.getFranchise().getRegion();
+
+        // Rule 0: date hợp lệ
         if (!request.newEndDate().isAfter(contract.getEndDate())) {
             throw new ApiException(ErrorCode.CT_003_INVALID_CONTRACT_DATE);
         }
 
-        // Kiểm tra giới hạn gia hạn tối đa từ Metadata
-        String context = contract.getFranchise().getRegion();
+        // Rule 1: total duration
+        int maxTotalYears = metadataHelper.getInt("CONTRACT_DURATION_MAX_YEARS", context, 10);
+
+        long totalYears = ChronoUnit.YEARS.between(
+                contract.getStartDate(),
+                request.newEndDate()
+        );
+
+        if (totalYears > maxTotalYears) {
+            throw new ApiException(ErrorCode.CT_003_INVALID_CONTRACT_DATE,
+                    "Total contract duration cannot exceed " + maxTotalYears + " years");
+        }
+
+        // Rule 2: mỗi lần renew
         int maxRenewYears = metadataHelper.getInt("CONTRACT_RENEW_MAX_YEARS", context, 3);
-        long extensionYears = ChronoUnit.YEARS.between(contract.getEndDate(), request.newEndDate());
+
+        long extensionYears = ChronoUnit.YEARS.between(
+                contract.getEndDate(),
+                request.newEndDate()
+        );
 
         if (extensionYears > maxRenewYears) {
             throw new ApiException(ErrorCode.CT_003_INVALID_CONTRACT_DATE,
                     "Renewal extension cannot exceed " + maxRenewYears + " years");
         }
+
         LocalDateTime now = LocalDateTime.now();
 
         contract.setEndDate(request.newEndDate());
@@ -271,6 +292,84 @@ public class ContractServiceImpl implements ContractService {
                 terminatedBy,
                 pageable
         ).map(contractMapper::toListResponse);
+    }
+
+    @Override
+    public ContractResponse update(UUID id, UpdateContractRequest request, String updatedBy) {
+        Contract contract = contractRepository.findById(id)
+                .orElseThrow(() -> new ApiException(ErrorCode.CT_001_CONTRACT_NOT_FOUND));
+
+        if (contract.getStatus() != ContractStatus.DRAFT) {
+            throw new ApiException(ErrorCode.CT_006_INVALID_CONTRACT_STATUS, "Only DRAFT contract can be updated");
+        }
+
+        // 1. Kiểm tra ngày tháng
+        if (!request.startDate().isBefore(request.endDate())) {
+            throw new ApiException(ErrorCode.CT_003_INVALID_CONTRACT_DATE);
+        }
+
+        // 2. Lấy context để kiểm tra Metadata (Khắc phục lỗi thiếu biến context)
+        String context = contract.getFranchise().getRegion();
+
+        // 3. Kiểm tra thời hạn tối đa
+        int maxDuration = metadataHelper.getInt("CONTRACT_DURATION_MAX_YEARS", context, 10);
+        long years = ChronoUnit.YEARS.between(request.startDate(), request.endDate());
+        if (years > maxDuration) {
+            throw new ApiException(ErrorCode.CT_003_INVALID_CONTRACT_DATE);
+        }
+
+        // 4. Kiểm tra chồng lấn và trùng số hợp đồng
+        if (contractRepository.existsOverlappingActiveContractExcludeSelf(
+                contract.getFranchise().getId(), request.startDate(), request.endDate(), id)) {
+            throw new ApiException(ErrorCode.CT_007_CONTRACT_DATE_OVERLAP);
+        }
+
+        if (!contract.getContractNumber().equals(request.contractNumber())
+                && contractRepository.existsByContractNumber(request.contractNumber())) {
+            throw new ApiException(ErrorCode.CT_004_DUPLICATE_CONTRACT_NUMBER);
+        }
+
+        // 5. Cập nhật dữ liệu thông qua Mapper
+        contractMapper.updateEntity(contract, request);
+
+        BigDecimal royalty = request.royaltyRate();
+
+        if (royalty == null) {
+            royalty = contract.getRoyaltyRate(); // giữ giá trị cũ
+        }
+
+        BigDecimal maxRoyalty = metadataHelper.getDecimal("CONTRACT_ROYALTY_MAX", context, new BigDecimal("100"));
+        if (royalty.compareTo(BigDecimal.ZERO) <= 0 || royalty.compareTo(maxRoyalty) > 0) {
+            throw new ApiException(ErrorCode.CT_005_INVALID_ROYALTY_RATE);
+        }
+        royalty = royalty.stripTrailingZeros();
+
+        if (royalty.scale() < 0) {
+            royalty = royalty.setScale(0);
+        }
+
+        contract.setRoyaltyRate(royalty);
+
+        // 7. Lưu và Audit
+        saveAuditLog(id, ContractStatus.DRAFT, ContractStatus.DRAFT, "UPDATED", updatedBy);
+
+        return contractMapper.toDetailResponse(contractRepository.save(contract));
+    }
+
+    @Override
+    public void delete(UUID id, String deletedBy) {
+        Contract contract = contractRepository.findById(id)
+                .orElseThrow(() -> new ApiException(ErrorCode.CT_001_CONTRACT_NOT_FOUND));
+
+        if (contract.getStatus() != ContractStatus.DRAFT) {
+            throw new ApiException(ErrorCode.CT_006_INVALID_CONTRACT_STATUS,
+                    "Only DRAFT contract can be deleted");
+        }
+
+        // Lưu vết người xóa vào Audit Log trước khi xóa thực thể
+        saveAuditLog(contract.getId(), ContractStatus.DRAFT, null, "DELETED", deletedBy);
+
+        contractRepository.delete(contract);
     }
 
 }

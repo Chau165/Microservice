@@ -91,4 +91,20 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
             Pageable pageable
     );
 
+    @Query("""
+            SELECT COUNT(c) > 0 FROM Contract c
+            WHERE c.franchise.id = :franchiseId
+            AND c.id <> :contractId
+            AND c.status = 'ACTIVE'
+            AND (
+                (c.startDate <= :endDate AND c.endDate >= :startDate)
+            )
+        """)
+    boolean existsOverlappingActiveContractExcludeSelf(
+            UUID franchiseId,
+            LocalDate startDate,
+            LocalDate endDate,
+            UUID contractId
+    );
+
 }
