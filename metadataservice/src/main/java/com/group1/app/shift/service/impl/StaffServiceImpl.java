@@ -111,7 +111,8 @@ public class StaffServiceImpl implements StaffService {
         Pageable pageable = PageRequest.of(page, size);
 
         // Filter staffs by managerUserId directly
-        return staffRepository.findByManagerUserId(managerUserId, pageable).map(this::mapToResponse);
+        Page<Staff> staffPage = staffRepository.findByManagerUserId(managerUserId, pageable);
+        return staffPage.map(this::mapToResponse);
     }
 
 
