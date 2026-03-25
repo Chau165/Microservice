@@ -51,14 +51,15 @@ public class ShiftServiceImpl implements ShiftService {
     }
 
     @Override
-    public Page<ShiftResponse> getAllShifts(int page, int size) {
+    public Page<ShiftResponse> getAllShifts(int page, int size, String branchId) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("date").descending());
-        return shiftRepository.findAll(pageable).map(this::mapToResponse);
-    }
 
-    public Page<ShiftResponse> getAllShiftsPaged(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("date").descending());
-        return shiftRepository.findAll(pageable).map(this::mapToResponse);
+        // Thay this::mapToResponse bằng shift -> mapToResponse(shift) để compiler hiểu rõ
+        if (branchId != null && !branchId.trim().isEmpty()) {
+            return shiftRepository.findAllByBranchId(branchId, pageable)
+                    .map(shift -> mapToResponse(shift));
+        }
+        return shiftRepository.findAll(pageable).map(shift -> mapToResponse(shift));
     }
 
     @Override
@@ -99,9 +100,17 @@ public class ShiftServiceImpl implements ShiftService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ShiftResponse> getShiftsByDate(LocalDate date) {
-        return shiftRepository.findAllByDate(date)
-                .stream()
+    public List<ShiftResponse> getShiftsByDate(LocalDate date, String branchId) {
+        List<Shift> shifts;
+
+        // Cập nhật tìm kiếm theo branchId để Manager chỉ thấy ca của mình
+        if (branchId != null && !branchId.trim().isEmpty()) {
+            shifts = shiftRepository.findAllByDateAndBranchId(date, branchId);
+        } else {
+            shifts = shiftRepository.findAllByDate(date);
+        }
+
+        return shifts.stream()
                 .map(shift -> {
                     int staffCount = shiftAssignmentRepository
                             .findAllByShiftId(shift.getId()).size();
@@ -153,7 +162,6 @@ public class ShiftServiceImpl implements ShiftService {
                 .shiftId(shiftId)
                 .staffId(staffId)
                 .assignedBy(assignedBy)
-                // save denormalized fields so schedule queries are fast
                 .date(shift.getDate())
                 .startTime(shift.getStartTime())
                 .endTime(shift.getEndTime())
@@ -163,22 +171,12 @@ public class ShiftServiceImpl implements ShiftService {
         shiftAssignmentRepository.save(assignment);
     }
 
-    /**
-     * =================================================================
-     * LOGIC CẬP NHẬT: THÊM THỜI GIAN ÂN HẠN (GRACE PERIOD)
-     * =================================================================
-     */
     private String calculateStatus(Shift shift) {
-        // Lấy giờ hệ thống chuẩn VN
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         LocalDateTime shiftStart = LocalDateTime.of(shift.getDate(), shift.getStartTime());
         LocalDateTime shiftEnd = LocalDateTime.of(shift.getDate(), shift.getEndTime());
 
-        // 1. Cho phép Check-in sớm: Mở cửa trước 30 phút
         LocalDateTime allowCheckInTime = shiftStart.minusMinutes(30);
-
-        // 2. Cho phép Check-out trễ: Khóa sổ sau 30 phút kể từ lúc hết ca
-        // (Trong thời gian này Admin vẫn thoải mái thao tác)
         LocalDateTime closeTime = shiftEnd.plusMinutes(30);
 
         if (now.isBefore(allowCheckInTime)) {
@@ -186,7 +184,6 @@ public class ShiftServiceImpl implements ShiftService {
         } else if (now.isAfter(closeTime)) {
             return "CLOSED";
         } else {
-            // Bao gồm từ [Bắt đầu - 30p] đến [Kết thúc + 30p]
             return "OPEN";
         }
     }

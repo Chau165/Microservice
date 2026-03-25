@@ -41,8 +41,8 @@ public class ShiftController {
 
     @GetMapping
     public ApiResponse<?> getAllShifts(
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) String branchId, // <--- Nhận tham số chi nhánh từ phía Client
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -50,14 +50,14 @@ public class ShiftController {
             return ApiResponse.<List<ShiftResponse>>builder()
                     .code(200)
                     .message("Fetch shifts by date successfully")
-                    .result(shiftService.getShiftsByDate(date))
+                    .result(shiftService.getShiftsByDate(date, branchId)) // <--- Cập nhật truyền branchId
                     .build();
         }
 
         return ApiResponse.<Page<ShiftResponse>>builder()
                 .code(200)
                 .message("Fetch shifts successfully")
-                .result(shiftService.getAllShifts(page, size))
+                .result(shiftService.getAllShifts(page, size, branchId)) // <--- Lọc cả lúc tải page
                 .build();
     }
 
@@ -100,11 +100,12 @@ public class ShiftController {
                 .result(shiftService.getStaffByShift(shiftId))
                 .build();
     }
+
     @PostMapping("/{shiftId}/assign")
     public ApiResponse<Void> assignStaffToShift(
             @PathVariable String shiftId,
             @RequestBody @Valid ShiftAssignmentRequest request,
-            @RequestHeader(value = "USER", defaultValue = "admin_01") String assignedBy) { // <--- Lấy ID Admin
+            @RequestHeader(value = "USER", defaultValue = "admin_01") String assignedBy) {
         shiftService.assignStaffToShift(shiftId, request.getStaffId(), assignedBy);
 
         return ApiResponse.<Void>builder()
