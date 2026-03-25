@@ -152,6 +152,7 @@ public class StaffServiceImpl implements StaffService {
                 .email(s.getEmail())
                 .phone(s.getPhone())
                 .branchId(s.getBranchId())
+                .managerUserId(s.getManagerUserId())
                 .gender(s.getGender())
                 .status(s.getStatus())
                 .dateOfBirth(s.getDateOfBirth())
