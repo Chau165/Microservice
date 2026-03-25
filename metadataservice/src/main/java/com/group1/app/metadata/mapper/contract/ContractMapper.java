@@ -1,10 +1,12 @@
 package com.group1.app.metadata.mapper.contract;
 
 import com.group1.app.metadata.dto.contract.request.CreateContractRequest;
+import com.group1.app.metadata.dto.contract.request.UpdateContractRequest;
 import com.group1.app.metadata.dto.contract.response.*;
 import com.group1.app.metadata.entity.contract.Contract;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -48,4 +50,9 @@ public interface ContractMapper {
     @Mapping(source = "franchise.franchiseCode", target = "franchiseCode")
     @Mapping(target = "status", expression = "java(contract.getEffectiveStatus())")
     ContractResponse toDetailResponse(Contract contract);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "franchise", ignore = true)
+    void updateEntity(@MappingTarget Contract entity, UpdateContractRequest request);
 }

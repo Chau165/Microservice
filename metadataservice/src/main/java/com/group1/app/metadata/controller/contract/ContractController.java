@@ -6,6 +6,7 @@ import com.group1.app.common.security.UserPrincipal;
 import com.group1.app.metadata.dto.contract.request.CreateContractRequest;
 import com.group1.app.metadata.dto.contract.request.RenewContractRequest;
 import com.group1.app.metadata.dto.contract.request.TerminateContractRequest;
+import com.group1.app.metadata.dto.contract.request.UpdateContractRequest;
 import com.group1.app.metadata.dto.contract.response.*;
 import com.group1.app.metadata.entity.contract.ContractStatus;
 import com.group1.app.metadata.service.ContractService;
@@ -159,5 +160,27 @@ public class ContractController {
         return ApiResponse.success(PageResponse.from(result));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Void> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateContractRequest body,
+            @AuthenticationPrincipal UserPrincipal user) {
+
+        String actor = (user != null) ? user.getName() : "SYSTEM";
+        contractService.update(id, body, actor);
+        return ApiResponse.success(null);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Void> delete(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal user) {
+
+        String actor = (user != null) ? user.getName() : "SYSTEM";
+        contractService.delete(id, actor);
+        return ApiResponse.success(null);
+    }
 
 }
