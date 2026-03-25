@@ -12,9 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,12 +25,15 @@ public class StaffController {
     @PostMapping
     public ApiResponse<StaffResponse> createStaff(
             @RequestBody @Valid StaffCreateRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        String managerUserId = jwt.getClaimAsString("userId");
-        if (managerUserId == null) managerUserId = jwt.getSubject();
+        if (userPrincipal == null) {
+            throw new AccessDeniedException("Missing authentication");
+        }
 
-        // Set managerUserId from JWT (not branchId!)
+        String managerUserId = userPrincipal.getUserId();
+
+        // Set managerUserId from UserPrincipal (injected by API Gateway headers)
         request.setManagerUserId(managerUserId);
 
         return ApiResponse.<StaffResponse>builder()
@@ -43,8 +44,7 @@ public class StaffController {
 
     @GetMapping
     public ApiResponse<Page<StaffResponse>> getAllStaff(
-            Authentication authentication,
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -52,9 +52,13 @@ public class StaffController {
         if (size <= 0) size = 10;
         if (size > 100) size = 100;
 
+        if (userPrincipal == null) {
+            throw new AccessDeniedException("Missing authentication");
+        }
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        String managerUserId = resolveManagerUserId(authentication, jwt);
+        String managerUserId = userPrincipal.getUserId();
 
         return ApiResponse.<Page<StaffResponse>>builder()
             .result(staffService.getAllStaffs(managerUserId, page, size))
@@ -81,26 +85,6 @@ public class StaffController {
                 .build();
     }
 
-    private String resolveManagerUserId(Authentication authentication, Jwt jwt) {
-        String managerUserId = null;
-
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal userPrincipal) {
-            managerUserId = userPrincipal.getUserId();
-        }
-
-        if ((managerUserId == null || managerUserId.isBlank()) && jwt != null) {
-            managerUserId = jwt.getClaimAsString("userId");
-            if (managerUserId == null || managerUserId.isBlank()) {
-                managerUserId = jwt.getSubject();
-            }
-        }
-
-        if (managerUserId == null || managerUserId.isBlank()) {
-            throw new AccessDeniedException("Missing manager identity");
-        }
-
-        return managerUserId;
-    }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteStaffById(@PathVariable String id) {
