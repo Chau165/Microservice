@@ -162,14 +162,15 @@ public class ContractController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<Void> update(
+    public ApiResponse<ContractResponse> update(
+            // 1. Đổi Void thành ContractResponse
             @PathVariable UUID id,
             @Valid @RequestBody UpdateContractRequest body,
             @AuthenticationPrincipal UserPrincipal user) {
-
         String actor = (user != null) ? user.getName() : "SYSTEM";
-        contractService.update(id, body, actor);
-        return ApiResponse.success(null);
+        // 2. Hứng kết quả từ service và truyền vào success()
+        ContractResponse result = contractService.update(id, body, actor);
+        return ApiResponse.success(result);
     }
 
     @DeleteMapping("/{id}")
