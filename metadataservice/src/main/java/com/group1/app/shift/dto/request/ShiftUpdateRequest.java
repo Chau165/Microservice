@@ -1,5 +1,7 @@
 package com.group1.app.shift.dto.request;
 
+import com.group1.app.common.validation.ValidShiftTime;
+import com.group1.app.common.validation.ValidFutureShiftTime;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -13,6 +15,8 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@ValidShiftTime
+@ValidFutureShiftTime
 public class ShiftUpdateRequest {
 
     @NotNull(message = "Date cannot be null")

@@ -13,6 +13,10 @@ import java.time.LocalDate;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class StaffCreateRequest {
     @NotBlank(message = "Name is required")
+    @Pattern(
+            regexp = "^[a-zA-ZÀ-ỿ\\s]+$",
+            message = "Name must not contain numbers or special characters"
+    )
     String name;
 
     @NotBlank(message = "Email is required")
