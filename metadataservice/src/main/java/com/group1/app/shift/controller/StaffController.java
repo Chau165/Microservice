@@ -71,8 +71,21 @@ public class StaffController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<StaffResponse> updateStaffById(@PathVariable String id, @RequestBody @Valid StaffCreateRequest request) {
-        return ApiResponse.<StaffResponse>builder().result(staffService.updateStaff(id, request)).build();
+    public ApiResponse<StaffResponse> updateStaffById(
+            @PathVariable String id,
+            @RequestBody @Valid StaffCreateRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        if (userPrincipal == null) {
+            throw new AccessDeniedException("Missing authentication");
+        }
+
+        String managerUserId = userPrincipal.getUserId();
+        request.setManagerUserId(managerUserId);
+
+        return ApiResponse.<StaffResponse>builder()
+                .result(staffService.updateStaff(id, request))
+                .build();
     }
 
     @PatchMapping("/{id}/status")
