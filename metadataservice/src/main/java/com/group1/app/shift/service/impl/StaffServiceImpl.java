@@ -70,13 +70,14 @@ public class StaffServiceImpl implements StaffService {
                 throw new AppException(ErrorCode.PHONE_EXISTED);
             }
         });
+
+        // Update all fields from request
         staff.setName(request.getName());
         staff.setPhone(request.getPhone());
-        staff.setManagerUserId(request.getManagerUserId());
-        staff.setDateOfBirth(request.getDateOfBirth());
         staff.setGender(request.getGender());
-
-
+        staff.setDateOfBirth(request.getDateOfBirth());
+        staff.setBranchId(request.getBranchId());
+        staff.setManagerUserId(request.getManagerUserId());
 
         return mapToResponse(staffRepository.save(staff));
     }
