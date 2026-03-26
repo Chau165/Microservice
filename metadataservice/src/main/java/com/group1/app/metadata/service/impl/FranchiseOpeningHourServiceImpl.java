@@ -16,8 +16,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,13 +32,33 @@ public class FranchiseOpeningHourServiceImpl implements FranchiseOpeningHourServ
     private final ApplicationEventPublisher publisher;
 
     @Override
+    public List<OpeningHourResponse> getOpeningHours(UUID franchiseId) {
+
+        franchiseRepository.findById(franchiseId)
+                .orElseThrow(() -> new ApiException(ErrorCode.FR_404_FRANCHISE_NOT_FOUND));
+
+        return openingHourRepository.findByFranchise_Id(franchiseId).stream()
+                .sorted(Comparator.comparing(FranchiseOpeningHour::getDayOfWeek))
+                .map(hour -> new OpeningHourResponse(
+                        franchiseId,
+                        hour.getDayOfWeek(),
+                        hour.getOpenTime(),
+                        hour.getCloseTime(),
+                        hour.getIsClosed()
+                ))
+                .toList();
+    }
+
+    @Override
     @Transactional
     public OpeningHourResponse updateOpeningHours(UUID franchiseId, UpdateOpeningHoursRequest request) {
 
         Franchise franchise = franchiseRepository.findById(franchiseId)
                 .orElseThrow(() -> new ApiException(ErrorCode.FR_404_FRANCHISE_NOT_FOUND));
 
-        if (!request.getCloseTime().isAfter(request.getOpenTime())) {
+        boolean isClosed = Boolean.TRUE.equals(request.getIsClosed());
+
+        if (!isClosed && !request.getCloseTime().isAfter(request.getOpenTime())) {
             throw new ApiException(ErrorCode.OH_002_INVALID_TIME_RANGE);
         }
 
@@ -48,7 +70,8 @@ public class FranchiseOpeningHourServiceImpl implements FranchiseOpeningHourServ
 
         long openMinutes = Duration.between(request.getOpenTime(), request.getCloseTime()).toMinutes();
 
-        if (brand.getMaxOpenMinutesPerDay() != null &&
+        if (!isClosed
+                && brand.getMaxOpenMinutesPerDay() != null &&
                 openMinutes > brand.getMaxOpenMinutesPerDay()) {
             throw new ApiException(ErrorCode.OH_003_EXCEEDS_MAX_HOURS);
         }
@@ -65,7 +88,7 @@ public class FranchiseOpeningHourServiceImpl implements FranchiseOpeningHourServ
 
         entity.setOpenTime(request.getOpenTime());
         entity.setCloseTime(request.getCloseTime());
-        entity.setIsClosed(false);
+        entity.setIsClosed(isClosed);
 
         FranchiseOpeningHour saved = openingHourRepository.save(entity);
 
