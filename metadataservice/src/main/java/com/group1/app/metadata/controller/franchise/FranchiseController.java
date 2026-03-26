@@ -143,6 +143,13 @@ public class FranchiseController {
         );
     }
 
+    @GetMapping
+    public ApiResponse<List<FranchiseResponse>> getAll() {
+        return ApiResponse.success(
+                franchiseService.getAll()
+        );
+    }
+
     @PutMapping("/{id}/suspend")
     @PreAuthorize("hasRole('ADMIN')")
 //    @PreAuthorize("hasAuthority('FRANCHISE_SUSPEND')")
