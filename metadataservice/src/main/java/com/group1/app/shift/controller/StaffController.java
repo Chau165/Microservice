@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,6 +24,7 @@ public class StaffController {
     private final StaffService staffService;
 
     @PostMapping
+    @PreAuthorize("hasRole('MANAGER')")
     public ApiResponse<StaffResponse> createStaff(
             @RequestBody @Valid StaffCreateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
@@ -43,6 +45,7 @@ public class StaffController {
 
 
     @GetMapping
+    @PreAuthorize("hasRole('MANAGER')")
     public ApiResponse<Page<StaffResponse>> getAllStaff(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(defaultValue = "0") int page,
@@ -71,6 +74,7 @@ public class StaffController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
     public ApiResponse<StaffResponse> updateStaffById(
             @PathVariable String id,
             @RequestBody @Valid StaffCreateRequest request,
@@ -89,6 +93,7 @@ public class StaffController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('MANAGER')")
     public ApiResponse<StaffResponse> updateStatus(
             @PathVariable String id,
             @RequestBody @Valid StaffStatusRequest request) {
@@ -100,6 +105,7 @@ public class StaffController {
 
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
     public ApiResponse<Void> deleteStaffById(@PathVariable String id) {
         staffService.deleteStaff(id);
         return ApiResponse.<Void>builder().message("Staff deleted").build();
