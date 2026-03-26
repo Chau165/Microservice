@@ -69,7 +69,8 @@ public class SecurityConfig {
                                 "/api/*/public/**",
                                 "/api/public/**",
                                 "/api/*-service/public/**",
-                                "/api/*-service/*/public/**"
+                                "/api/*-service/*/public/**",
+                                "/api/franchise-service/franchises"
                         ).permitAll()
 
                         // ================= CART (GUEST) =================
