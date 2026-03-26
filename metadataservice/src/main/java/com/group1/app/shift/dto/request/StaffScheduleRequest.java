@@ -34,6 +34,6 @@ public class StaffScheduleRequest {
     LocalTime endTime;
 
     // optional fields to support assignment-based schedules
-    String branchId;
+    String franchiseCode;
     String shiftId;
 }

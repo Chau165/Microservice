@@ -18,5 +18,5 @@ public class TimelineItemResponse {
     int assignedStaff;
 
     String status;
-    String branchId;
+    String franchiseCode;
 }

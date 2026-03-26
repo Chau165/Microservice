@@ -32,8 +32,8 @@ public class Shift {
     @Column(name = "end_time", nullable = false)
     LocalTime endTime;
 
-    @Column(name = "branch_id", nullable = false)
-    String branchId;
+    @Column(name = "franchise_code", nullable = false)
+    String franchiseCode;
 
     @Column(name = "create_by", nullable = false)
     String createBy;

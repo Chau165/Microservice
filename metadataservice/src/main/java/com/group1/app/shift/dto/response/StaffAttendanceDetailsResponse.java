@@ -15,7 +15,7 @@ public class StaffAttendanceDetailsResponse {
     LocalDate date;
     LocalTime startTime;
     LocalTime endTime;
-    String branchId;
+    String franchiseCode;
     String shiftStatus; // OPEN, PREPARING, CLOSED
     String attendanceStatus; // PRESENT, ABSENT, LATE, EARLY_LEAVE, UNMARKED
     Integer lateMinutes;

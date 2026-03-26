@@ -48,7 +48,7 @@ public class StaffServiceImpl implements StaffService {
                 .name(request.getName())
                 .email(request.getEmail())
                 .phone(request.getPhone())
-                .branchId(request.getBranchId())
+                .franchiseCode(request.getFranchiseCode())
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
                 .managerUserId(request.getManagerUserId())
@@ -76,7 +76,7 @@ public class StaffServiceImpl implements StaffService {
         staff.setPhone(request.getPhone());
         staff.setGender(request.getGender());
         staff.setDateOfBirth(request.getDateOfBirth());
-        staff.setBranchId(request.getBranchId());
+        staff.setFranchiseCode(request.getFranchiseCode());
         staff.setManagerUserId(request.getManagerUserId());
 
         return mapToResponse(staffRepository.save(staff));
@@ -152,7 +152,7 @@ public class StaffServiceImpl implements StaffService {
                 .name(s.getName())
                 .email(s.getEmail())
                 .phone(s.getPhone())
-                .branchId(s.getBranchId())
+                .franchiseCode(s.getFranchiseCode())
                 .managerUserId(s.getManagerUserId())
                 .gender(s.getGender())
                 .status(s.getStatus())

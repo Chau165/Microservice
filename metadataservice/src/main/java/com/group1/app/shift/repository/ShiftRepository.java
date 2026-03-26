@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 public interface ShiftRepository extends JpaRepository<Shift, String> {
     List<Shift> findAllByDate(LocalDate date);
-    List<Shift> findAllByBranchId(String branchId);
-    List<Shift> findAllByDateAndBranchId(LocalDate date, String branchId);
+    List<Shift> findAllByFranchiseCode(String franchiseCode);
+    List<Shift> findAllByDateAndFranchiseCode(LocalDate date, String franchiseCode);
 }

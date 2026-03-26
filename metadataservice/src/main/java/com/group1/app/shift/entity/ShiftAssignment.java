@@ -49,8 +49,8 @@ public class ShiftAssignment {
     @Column(name = "end_time")
     LocalTime endTime;
 
-    @Column(name = "branch_id")
-    String branchId;
+    @Column(name = "franchise_code")
+    String franchiseCode;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
