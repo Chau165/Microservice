@@ -44,7 +44,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/api/metadata/effective",
-                                "/api/franchise-service/franchises"
+                                "/api/franchise-service/franchises/public"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
