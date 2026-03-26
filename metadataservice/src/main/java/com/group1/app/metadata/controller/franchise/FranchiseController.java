@@ -13,7 +13,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -109,8 +108,7 @@ public class FranchiseController {
     @PreAuthorize("hasRole('MANAGER')")
 //    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_MANAGER')")
     public ApiResponse<Page<FranchiseResponse>> getMyFranchises(
-            Authentication authentication,
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -118,43 +116,34 @@ public class FranchiseController {
         if (size <= 0) size = 10;
         if (size > 100) size = 100;
 
+        if (userPrincipal == null) {
+            throw new AccessDeniedException("Missing authentication");
+        }
+
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by("createdAt").descending()
         );
 
-        String managerUserId = resolveManagerUserId(authentication, jwt);
+        String managerUserId = userPrincipal.getUserId();
 
         return ApiResponse.success(
                 franchiseService.getAllByManager(managerUserId, pageable)
         );
     }
 
-    private String resolveManagerUserId(Authentication authentication, Jwt jwt) {
-        String managerUserId = null;
 
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal userPrincipal) {
-            managerUserId = userPrincipal.getUserId();
-        }
-
-        if ((managerUserId == null || managerUserId.isBlank()) && jwt != null) {
-            managerUserId = jwt.getClaimAsString("userId");
-            if (managerUserId == null || managerUserId.isBlank()) {
-                managerUserId = jwt.getSubject();
-            }
-        }
-
-        if (managerUserId == null || managerUserId.isBlank()) {
-            throw new AccessDeniedException("Missing manager identity");
-        }
-
-        return managerUserId;
-    }
+//     @GetMapping(/public)
+// //    @PreAuthorize("hasRole('ADMIN')")
+// //    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_ALL')")
+//     public ApiResponse<List<FranchiseResponse>> getAllFranchise() {
+//         return ApiResponse.success(
+//                 franchiseService.getAll()
+//         );
+//     }
 
     @GetMapping
-//    @PreAuthorize("hasRole('ADMIN')")
-//    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_ALL')")
     public ApiResponse<List<FranchiseResponse>> getAll() {
         return ApiResponse.success(
                 franchiseService.getAll()

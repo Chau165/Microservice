@@ -43,7 +43,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/api/metadata/effective"
+                                "/api/metadata/effective",
+                                "/api/franchise-service/franchises/public"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
