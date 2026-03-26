@@ -29,6 +29,8 @@ public class StaffCreateRequest {
     @NotBlank(message = "gender is required")
     String gender;
 
+    @NotBlank(message = "Branch is required")
+    String branchId;
 
     @NotNull(message = "Date of birth is required")
     @Past(message = "Date of birth must be in the past")

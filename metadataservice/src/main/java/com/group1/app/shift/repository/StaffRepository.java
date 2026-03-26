@@ -21,6 +21,7 @@ public interface StaffRepository extends JpaRepository<Staff, String> {
 
     Optional<Staff> getStaffById(String staffId);
 
+    Page<Staff> findAllByBranchId(String branchId, Pageable pageable);
 
     Page<Staff> findByManagerUserId(String managerUserId, Pageable pageable);
 }
