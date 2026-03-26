@@ -35,4 +35,7 @@ public class StaffCreateRequest {
     @NotNull(message = "Date of birth is required")
     @Past(message = "Date of birth must be in the past")
     LocalDate dateOfBirth;
+
+    // Add managerUserId field (set by controller from JWT)
+    String managerUserId;
 }

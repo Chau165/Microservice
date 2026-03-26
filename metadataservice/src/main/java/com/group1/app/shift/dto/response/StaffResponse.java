@@ -18,6 +18,7 @@ public class StaffResponse {
     String email;
     String phone;
     String branchId;
+    String managerUserId;
     StaffStatus status;
     LocalDate dateOfBirth;
     LocalDateTime createdAt;
