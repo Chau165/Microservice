@@ -72,7 +72,7 @@ public class StaffServiceImpl implements StaffService {
         });
         staff.setName(request.getName());
         staff.setPhone(request.getPhone());
-        staff.setBranchId(request.getBranchId());
+        staff.setManagerUserId(request.getManagerUserId());
         staff.setDateOfBirth(request.getDateOfBirth());
         staff.setGender(request.getGender());
 
