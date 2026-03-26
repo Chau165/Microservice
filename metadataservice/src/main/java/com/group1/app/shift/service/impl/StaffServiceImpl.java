@@ -48,10 +48,9 @@ public class StaffServiceImpl implements StaffService {
                 .name(request.getName())
                 .email(request.getEmail())
                 .phone(request.getPhone())
-                .branchId(request.getBranchId())
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
-                .managerUserId(request.getManagerUserId())  // ← ADD THIS
+                .managerUserId(request.getManagerUserId())
                 .build();
 
         // 2. Tự động sinh Staff Code ngay từ đầu (VD: NVA-54321)
@@ -76,7 +75,6 @@ public class StaffServiceImpl implements StaffService {
         staff.setPhone(request.getPhone());
         staff.setGender(request.getGender());
         staff.setDateOfBirth(request.getDateOfBirth());
-        staff.setBranchId(request.getBranchId());
         staff.setManagerUserId(request.getManagerUserId());
 
         return mapToResponse(staffRepository.save(staff));
@@ -152,7 +150,6 @@ public class StaffServiceImpl implements StaffService {
                 .name(s.getName())
                 .email(s.getEmail())
                 .phone(s.getPhone())
-                .branchId(s.getBranchId())
                 .managerUserId(s.getManagerUserId())
                 .gender(s.getGender())
                 .status(s.getStatus())

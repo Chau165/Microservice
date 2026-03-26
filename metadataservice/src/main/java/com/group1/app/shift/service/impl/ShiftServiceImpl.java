@@ -223,7 +223,6 @@ public class ShiftServiceImpl implements ShiftService {
                 .id(s.getId())
                 .name(s.getName())
                 .email(s.getEmail())
-                .branchId(s.getBranchId())
                 .status(s.getStatus())
                 .build();
     }
