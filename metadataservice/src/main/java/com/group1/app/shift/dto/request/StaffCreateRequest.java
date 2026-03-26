@@ -13,6 +13,10 @@ import java.time.LocalDate;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class StaffCreateRequest {
     @NotBlank(message = "Name is required")
+    @Pattern(
+            regexp = "^[a-zA-ZÀ-ỿ\\s]+$",
+            message = "Name must not contain numbers or special characters"
+    )
     String name;
 
     @NotBlank(message = "Email is required")
@@ -35,6 +39,8 @@ public class StaffCreateRequest {
     @NotNull(message = "Date of birth is required")
     @Past(message = "Date of birth must be in the past")
     LocalDate dateOfBirth;
+
+    String userId;
 
     // Add managerUserId field (set by controller from JWT)
     @NotBlank(message = "Manager user is required")
