@@ -115,19 +115,15 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
         }).collect(Collectors.toList());
 
-        // save attendances
         List<Attendance> saved = attendanceRepository.saveAll(toSave);
 
-        // update related shift assignments status according to attendance
         List<ShiftAssignment> assignmentsToUpdate = saved.stream().map(a -> {
             ShiftAssignment asg = shiftAssignmentRepository.findByShiftIdAndStaffId(a.getShiftId(), a.getStaffId()).orElse(null);
             if (asg == null) return null;
             if (a.getStatus() == AttendanceStatus.ABSENT) {
                 asg.setStatus(ScheduleStatus.CANCELED);
             } else {
-                // PRESENT, LATE, EARLY_LEAVE -> treat as present
-                asg.setStatus(ScheduleStatus.COMPLETED
-                );
+                asg.setStatus(ScheduleStatus.COMPLETED);
             }
             return asg;
         }).filter(x -> x != null).collect(Collectors.toList());
@@ -142,7 +138,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public AttendanceResponse updateAttendance(String attendanceId, AttendanceItemRequest request, String updatedBy) {
-        return null;
+        return null; // Logic đang để trống từ code gốc của bạn
     }
 
     @Override
@@ -160,11 +156,16 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AttendanceReportResponse> getAttendanceReport(int month, int year) {
-        List<Staff> staffs = staffRepository.findAll();
+    public List<AttendanceReportResponse> getAttendanceReport(int month, int year, String branchId) {
+        // Lọc Staff theo BranchId
+        List<Staff> staffs = staffRepository.findAll().stream()
+                .filter(s -> branchId == null || branchId.trim().isEmpty() || branchId.equals(s.getBranchId()))
+                .collect(Collectors.toList());
 
+        // Lọc Shift theo BranchId
         List<Shift> allShifts = shiftRepository.findAll().stream()
                 .filter(s -> s.getDate().getMonthValue() == month && s.getDate().getYear() == year)
+                .filter(s -> branchId == null || branchId.trim().isEmpty() || branchId.equals(s.getBranchId()))
                 .collect(Collectors.toList());
 
         List<ShiftAssignment> assignments = shiftAssignmentRepository.findAll();
@@ -238,8 +239,14 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     @Transactional(readOnly = true)
-    public DashboardOverviewResponse getDashboardOverview(LocalDate date) {
-        List<Shift> shifts = shiftRepository.findAllByDate(date);
+    public DashboardOverviewResponse getDashboardOverview(LocalDate date, String branchId) {
+        List<Shift> shifts;
+        // Kiểm tra nhánh
+        if (branchId != null && !branchId.trim().isEmpty()) {
+            shifts = shiftRepository.findAllByDateAndBranchId(date, branchId);
+        } else {
+            shifts = shiftRepository.findAllByDate(date);
+        }
 
         int totalAssigned = 0, presentCount = 0, absentCount = 0, pendingCount = 0;
         List<TimelineItemResponse> timeline = new ArrayList<>();
@@ -303,7 +310,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<StaffAttendanceDetailsResponse> getStaffAttendanceHistory(String staffId, Integer month, Integer year, LocalDate exactDate) {
+    public List<StaffAttendanceDetailsResponse> getStaffAttendanceHistory(String staffId, Integer month, Integer year, LocalDate exactDate, String branchId) {
         List<String> assignedShiftIds = shiftAssignmentRepository.findAll().stream()
                 .filter(a -> a.getStaffId().equals(staffId))
                 .map(ShiftAssignment::getShiftId)
@@ -311,6 +318,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         List<Shift> shifts = shiftRepository.findAllById(assignedShiftIds);
 
+        // Lọc theo thời gian
         if (exactDate != null) {
             shifts = shifts.stream()
                     .filter(s -> s.getDate().equals(exactDate))
@@ -318,6 +326,13 @@ public class AttendanceServiceImpl implements AttendanceService {
         } else if (month != null && year != null) {
             shifts = shifts.stream()
                     .filter(s -> s.getDate().getMonthValue() == month && s.getDate().getYear() == year)
+                    .collect(Collectors.toList());
+        }
+
+        // Lọc theo nhánh
+        if (branchId != null && !branchId.trim().isEmpty()) {
+            shifts = shifts.stream()
+                    .filter(s -> branchId.equals(s.getBranchId()))
                     .collect(Collectors.toList());
         }
 
@@ -377,4 +392,3 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .build();
     }
 }
-

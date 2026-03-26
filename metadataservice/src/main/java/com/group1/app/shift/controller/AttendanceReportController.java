@@ -26,11 +26,11 @@ public class AttendanceReportController {
     AttendanceService attendanceService;
 
     // 1. API CHO TRANG ATTENDANCE COVERAGE REPORT
-    // Phản hồi tại: GET http://localhost:8081/attendance-reports
     @GetMapping
     public ApiResponse<List<AttendanceReportResponse>> getReport(
             @RequestParam(required = false) Integer month,
-            @RequestParam(required = false) Integer year) {
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String branchId) { // THÊM branchId
 
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         int targetMonth = (month != null) ? month : now.getMonthValue();
@@ -38,16 +38,15 @@ public class AttendanceReportController {
 
         return ApiResponse.<List<AttendanceReportResponse>>builder()
                 .message("Lấy báo cáo chuyên cần thành công")
-                .result(attendanceService.getAttendanceReport(targetMonth, targetYear))
+                .result(attendanceService.getAttendanceReport(targetMonth, targetYear, branchId))
                 .build();
     }
 
     // 2. API CHO TRANG DASHBOARD
-    // Phản hồi tại: GET http://localhost:8081/attendance-reports/dashboard?date=2026-03-09
     @GetMapping("/dashboard")
     public ApiResponse<DashboardOverviewResponse> getDashboardOverview(
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) String branchId) { // THÊM branchId
 
         // Nếu Frontend không gửi ngày lên, tự động lấy ngày hôm nay chuẩn giờ VN
         if (date == null) {
@@ -56,7 +55,7 @@ public class AttendanceReportController {
 
         return ApiResponse.<DashboardOverviewResponse>builder()
                 .message("Lấy dữ liệu Dashboard thành công")
-                .result(attendanceService.getDashboardOverview(date))
+                .result(attendanceService.getDashboardOverview(date, branchId))
                 .build();
     }
 
@@ -65,11 +64,12 @@ public class AttendanceReportController {
             @org.springframework.web.bind.annotation.PathVariable String staffId,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate exactDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate exactDate,
+            @RequestParam(required = false) String branchId) { // THÊM branchId
 
         return ApiResponse.<List<com.group1.app.shift.dto.response.StaffAttendanceDetailsResponse>>builder()
                 .message("Lấy lịch sử nhân viên thành công")
-                .result(attendanceService.getStaffAttendanceHistory(staffId, month, year, exactDate))
+                .result(attendanceService.getStaffAttendanceHistory(staffId, month, year, exactDate, branchId))
                 .build();
     }
 }

@@ -21,7 +21,8 @@ public interface AttendanceService {
 
     List<AttendanceResponse> getAttendanceByShift(String shiftId);
 
-    DashboardOverviewResponse getDashboardOverview(LocalDate date);
-    List<AttendanceReportResponse> getAttendanceReport(int month, int year);
-    List<StaffAttendanceDetailsResponse> getStaffAttendanceHistory(String staffId, Integer month, Integer year, LocalDate exactDate);
+    // THÊM branchId VÀO 3 HÀM DƯỚI
+    DashboardOverviewResponse getDashboardOverview(LocalDate date, String branchId);
+    List<AttendanceReportResponse> getAttendanceReport(int month, int year, String branchId);
+    List<StaffAttendanceDetailsResponse> getStaffAttendanceHistory(String staffId, Integer month, Integer year, LocalDate exactDate, String branchId);
 }
