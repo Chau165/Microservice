@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,12 +32,20 @@ public class StaffServiceImpl implements StaffService {
     public StaffResponse createStaff(StaffCreateRequest request) {
         Map<String, String> errors = new HashMap<>();
 
+        if (!StringUtils.hasText(request.getUserId())) {
+            errors.put("userId", "User id is required");
+        }
+
         if (staffRepository.existsByEmail(request.getEmail())) {
             errors.put("email", "Email already exists");
         }
 
         if (staffRepository.existsByPhone(request.getPhone())) {
             errors.put("phone", "Phone number already exists");
+        }
+
+        if (StringUtils.hasText(request.getUserId()) && staffRepository.existsByUserId(request.getUserId())) {
+            errors.put("userId", "User account is already linked to another staff");
         }
 
         if (!errors.isEmpty()) {
@@ -51,6 +60,7 @@ public class StaffServiceImpl implements StaffService {
                 .branchId(request.getBranchId())
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
+                .userId(request.getUserId())
                 .managerUserId(request.getManagerUserId())
                 .build();
 
@@ -78,6 +88,9 @@ public class StaffServiceImpl implements StaffService {
         staff.setDateOfBirth(request.getDateOfBirth());
         staff.setBranchId(request.getBranchId());
         staff.setManagerUserId(request.getManagerUserId());
+        if (StringUtils.hasText(request.getUserId())) {
+            staff.setUserId(request.getUserId());
+        }
 
         return mapToResponse(staffRepository.save(staff));
     }
@@ -153,6 +166,7 @@ public class StaffServiceImpl implements StaffService {
                 .email(s.getEmail())
                 .phone(s.getPhone())
                 .branchId(s.getBranchId())
+                .userId(s.getUserId())
                 .managerUserId(s.getManagerUserId())
                 .gender(s.getGender())
                 .status(s.getStatus())
