@@ -37,6 +37,5 @@ public class StaffCreateRequest {
     LocalDate dateOfBirth;
 
     // Add managerUserId field (set by controller from JWT)
-    @NotBlank(message = "Manager user is required")
     String managerUserId;
 }
