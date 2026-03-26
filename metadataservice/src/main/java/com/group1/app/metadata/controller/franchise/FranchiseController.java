@@ -137,7 +137,7 @@ public class FranchiseController {
     @GetMapping(/public)
 //    @PreAuthorize("hasRole('ADMIN')")
 //    @PreAuthorize("hasAuthority('FRANCHISE_VIEW_ALL')")
-    public ApiResponse<List<FranchiseResponse>> getAll() {
+    public ApiResponse<List<FranchiseResponse>> getAllFranchise() {
         return ApiResponse.success(
                 franchiseService.getAll()
         );
