@@ -44,7 +44,7 @@ public class ShiftServiceImpl implements ShiftService {
                 .date(request.getDate())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
-                .franchiseCode(request.getFranchiseCode())
+                .branchId(request.getBranchId())
                 .createBy(user)
                 .build();
         return mapToResponse(shiftRepository.save(shift));
@@ -80,7 +80,7 @@ public class ShiftServiceImpl implements ShiftService {
         shift.setDate(request.getDate());
         shift.setStartTime(request.getStartTime());
         shift.setEndTime(request.getEndTime());
-        shift.setFranchiseCode(request.getFranchiseCode());
+        shift.setBranchId(request.getBranchId());
         shift.setUpdateBy(user);
 
         return mapToResponse(shiftRepository.save(shift));
@@ -157,7 +157,7 @@ public class ShiftServiceImpl implements ShiftService {
                 .date(shift.getDate())
                 .startTime(shift.getStartTime())
                 .endTime(shift.getEndTime())
-                .franchiseCode(shift.getFranchiseCode())
+                .branchId(shift.getBranchId())
                 .build();
 
         shiftAssignmentRepository.save(assignment);
@@ -197,7 +197,7 @@ public class ShiftServiceImpl implements ShiftService {
                 .date(shift.getDate())
                 .startTime(shift.getStartTime())
                 .endTime(shift.getEndTime())
-                .franchiseCode(shift.getFranchiseCode())
+                .branchId(shift.getBranchId())
                 .status(calculateStatus(shift))
                 .createBy(shift.getCreateBy())
                 .createAt(shift.getCreateAt())
@@ -210,7 +210,7 @@ public class ShiftServiceImpl implements ShiftService {
                 .date(shift.getDate())
                 .startTime(shift.getStartTime())
                 .endTime(shift.getEndTime())
-                .franchiseCode(shift.getFranchiseCode())
+                .branchId(shift.getBranchId())
                 .status(calculateStatus(shift))
                 .createBy(shift.getCreateBy())
                 .createAt(shift.getCreateAt())
@@ -223,7 +223,7 @@ public class ShiftServiceImpl implements ShiftService {
                 .id(s.getId())
                 .name(s.getName())
                 .email(s.getEmail())
-                .franchiseCode(s.getFranchiseCode())
+                .branchId(s.getBranchId())
                 .status(s.getStatus())
                 .build();
     }

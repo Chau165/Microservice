@@ -284,7 +284,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                     .presentStaff(shiftPresentCount)
                     .assignedStaff(shiftAssignedCount)
                     .status(isFull ? "FULL" : "MISSING")
-                    .franchiseCode(shift.getFranchiseCode())
+                    .branchId(shift.getBranchId())
                     .build());
         }
 
@@ -347,7 +347,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                             .date(shift.getDate())
                             .startTime(shift.getStartTime())
                             .endTime(shift.getEndTime())
-                            .franchiseCode(shift.getFranchiseCode())
+                            .branchId(shift.getBranchId())
                             .shiftStatus(calculateShiftStatus(shift, now))
                             .attendanceStatus(attStatus)
                             .lateMinutes(lateMins)

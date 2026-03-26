@@ -17,7 +17,7 @@ public class ShiftResponse {
     LocalDate date;
     LocalTime startTime;
     LocalTime endTime;
-  String franchiseCode;
+    String branchId;
     String createBy;
     LocalDateTime createAt;
     String status;

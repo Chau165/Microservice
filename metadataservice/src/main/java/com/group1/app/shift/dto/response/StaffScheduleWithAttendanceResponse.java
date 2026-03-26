@@ -23,6 +23,6 @@ public class StaffScheduleWithAttendanceResponse {
     LocalTime startTime;
     @JsonFormat(pattern = "HH:mm:ss")
     LocalTime endTime;
-    String franchiseCode;
+    String branchId;
     String status; // SCHEDULED, IN_PROGRESS, COMPLETED, ABSENT
 }

@@ -32,8 +32,8 @@ public class Staff {
     @Column(nullable = false, unique = true)
     String email;
 
-    @Column(name = "franchise_code")
-    String franchiseCode;
+    @Column(name = "branch_id")
+    String branchId;
 
     @Column(name = "user_id")
     String userId;

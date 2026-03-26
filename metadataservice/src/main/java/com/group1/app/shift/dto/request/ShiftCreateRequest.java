@@ -24,6 +24,6 @@ public class ShiftCreateRequest {
     @NotNull(message = "End time cannot be null")
     LocalTime endTime;
 
-    @NotBlank(message = "Franchise code cannot be blank")
-    String franchiseCode;
+    @NotBlank(message = "Branch ID cannot be blank")
+    String branchId;
 }

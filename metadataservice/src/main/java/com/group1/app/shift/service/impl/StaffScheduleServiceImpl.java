@@ -57,7 +57,7 @@ public class StaffScheduleServiceImpl implements StaffScheduleService {
                 .date(request.getDate())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
-                .franchiseCode(request.getFranchiseCode())
+                .branchId(request.getBranchId())
                 .build();
 
         ShiftAssignment saved = shiftAssignmentRepository.save(a);
@@ -73,7 +73,7 @@ public class StaffScheduleServiceImpl implements StaffScheduleService {
         a.setDate(request.getDate());
         a.setStartTime(request.getStartTime());
         a.setEndTime(request.getEndTime());
-        a.setFranchiseCode(request.getFranchiseCode());
+        a.setBranchId(request.getBranchId());
 
         return mapToResponse(shiftAssignmentRepository.save(a));
     }
@@ -128,7 +128,7 @@ public class StaffScheduleServiceImpl implements StaffScheduleService {
                     .date(a.getDate())
                     .startTime(a.getStartTime())
                     .endTime(a.getEndTime())
-                    .franchiseCode(a.getFranchiseCode())
+                    .branchId(a.getBranchId())
                     .status(status)
                     .build();
         }).sorted((x, y) -> y.getDate().compareTo(x.getDate())).collect(Collectors.toList());
@@ -145,7 +145,7 @@ public class StaffScheduleServiceImpl implements StaffScheduleService {
                     .date(a.getDate())
                     .startTime(a.getStartTime())
                     .endTime(a.getEndTime())
-                    .franchiseCode(a.getFranchiseCode())
+                    .branchId(a.getBranchId())
                     .status(com.group1.app.shift.enums.ScheduleStatus.CANCELED)
                     .build();
         }
@@ -157,7 +157,7 @@ public class StaffScheduleServiceImpl implements StaffScheduleService {
                 .date(a.getDate())
                 .startTime(a.getStartTime())
                 .endTime(a.getEndTime())
-                .franchiseCode(a.getFranchiseCode())
+                .branchId(a.getBranchId())
                 .status(a.getStatus())
                 .build();
     }
