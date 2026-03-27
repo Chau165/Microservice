@@ -9,6 +9,7 @@ import com.group1.app.metadata.infrastructure.SupplierClient;
 import com.group1.app.metadata.mapper.franchise.FranchiseMapper;
 import com.group1.app.metadata.dto.franchise.request.CreateFranchiseRequest;
 import com.group1.app.metadata.dto.franchise.request.UpdateFranchiseRequest;
+import com.group1.app.metadata.dto.franchise.response.FranchiseOwnerProfileResponse;
 import com.group1.app.metadata.dto.franchise.response.FranchiseResponse;
 import com.group1.app.metadata.entity.contract.ContractStatus;
 import com.group1.app.metadata.entity.franchisestaff.FranchiseStaffStatus;
@@ -97,6 +98,25 @@ public class FranchiseServiceImpl implements FranchiseService {
         Franchise franchise = franchiseRepository.findById(id)
                 .orElseThrow(() -> new ApiException(ErrorCode.FR_404_FRANCHISE_NOT_FOUND));
         return franchiseMapper.toResponse(franchise);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FranchiseOwnerProfileResponse getOwnerProfile(UUID ownerId) {
+        Staff staff = staffRepository.findByUserId(ownerId.toString())
+                .orElseThrow(() -> new ApiException(ErrorCode.FS_001_STAFF_NOT_FOUND));
+
+        return new FranchiseOwnerProfileResponse(
+                ownerId,
+                staff.getUserId(),
+                staff.getId(),
+                staff.getName(),
+                staff.getEmail(),
+                staff.getPhone(),
+                staff.getBranchId(),
+                staff.getStaffCode(),
+                staff.getStatus() == null ? null : staff.getStatus().name()
+        );
     }
 
     @Override

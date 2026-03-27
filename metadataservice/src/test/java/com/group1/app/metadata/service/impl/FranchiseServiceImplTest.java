@@ -226,6 +226,38 @@ class FranchiseServiceImplTest {
     }
 
     @Test
+    void getOwnerProfile_success() {
+        UUID ownerId = UUID.randomUUID();
+        Staff staff = new Staff();
+        staff.setId("staff-001");
+        staff.setUserId(ownerId.toString());
+        staff.setName("Nguyen Van Manager");
+        staff.setEmail("manager@example.com");
+        staff.setPhone("0909000000");
+        staff.setBranchId("BR-001");
+        staff.setStaffCode("STF-001");
+        staff.setStatus(com.group1.app.shift.enums.StaffStatus.ACTIVE);
+
+        when(staffRepository.findByUserId(ownerId.toString())).thenReturn(Optional.of(staff));
+
+        var response = service.getOwnerProfile(ownerId);
+
+        assertNotNull(response);
+        assertEquals(ownerId, response.ownerId());
+        assertEquals("Nguyen Van Manager", response.name());
+        assertEquals("manager@example.com", response.email());
+    }
+
+    @Test
+    void getOwnerProfile_staffNotFound() {
+        UUID ownerId = UUID.randomUUID();
+        when(staffRepository.findByUserId(ownerId.toString())).thenReturn(Optional.empty());
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.getOwnerProfile(ownerId));
+        assertEquals(ErrorCode.FS_001_STAFF_NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
     void updateIdentity_success() {
         UUID id = UUID.randomUUID();
         Franchise f = new Franchise(); f.setId(id);
