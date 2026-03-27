@@ -72,3 +72,21 @@ management:
       enabled: true
     readinessState:
       enabled: true
+
+      spring:
+        cloud:
+          gateway:
+            routes:
+              - id: shift-attendance-reports-prefixed
+                uri: lb://shift-service
+                predicates:
+                  - Path=/api/shift-service/attendance-reports/**
+                filters:
+                  - StripPrefix=1
+
+              - id: shift-attendance-reports-short
+                uri: lb://shift-service
+                predicates:
+                  - Path=/api/attendance-reports/**
+                filters:
+                  - RewritePath=/api/attendance-reports/(?<segment>.*), /shift-service/attendance-reports/${segment}
