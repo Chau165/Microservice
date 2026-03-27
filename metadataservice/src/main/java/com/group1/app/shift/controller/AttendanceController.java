@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/shift-service/shifts/{shiftId}/attendance")
+@RequestMapping("/shift-service/shifts/{shiftId}/attendance")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AttendanceController {
@@ -35,7 +35,8 @@ public class AttendanceController {
     public ApiResponse<List<AttendanceResponse>> bulkMark(
             @PathVariable String shiftId,
             @RequestBody @Valid BulkMarkAttendanceRequest request,
-            @RequestHeader(value = "USER", defaultValue = "admin_01") String markedBy) {
+            @RequestHeader(value = "USER", defaultValue = "admin_01") String markedBy
+    ) {
         return ApiResponse.<List<AttendanceResponse>>builder()
                 .message("Attendance marked successfully")
                 .result(attendanceService.bulkMarkAttendance(shiftId, request, markedBy))
@@ -47,7 +48,8 @@ public class AttendanceController {
             @PathVariable String shiftId,
             @PathVariable String attendanceId,
             @RequestBody @Valid AttendanceItemRequest request,
-            @RequestHeader(value = "USER", defaultValue = "admin_01") String updatedBy) {
+            @RequestHeader(value = "USER", defaultValue = "admin_01") String updatedBy
+    ) {
         return ApiResponse.<AttendanceResponse>builder()
                 .message("Attendance updated successfully")
                 .result(attendanceService.updateAttendance(attendanceId, request, updatedBy))

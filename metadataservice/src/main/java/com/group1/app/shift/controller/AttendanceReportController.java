@@ -3,12 +3,14 @@ package com.group1.app.shift.controller;
 import com.group1.app.shift.dto.response.ApiResponse;
 import com.group1.app.shift.dto.response.AttendanceReportResponse;
 import com.group1.app.shift.dto.response.DashboardOverviewResponse;
+import com.group1.app.shift.dto.response.StaffAttendanceDetailsResponse;
 import com.group1.app.shift.service.AttendanceService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,7 +20,7 @@ import java.time.ZoneId;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/shift-service/attendance-reports") // Đường dẫn gốc
+@RequestMapping("/shift-service/attendance-reports")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AttendanceReportController {
@@ -30,8 +32,8 @@ public class AttendanceReportController {
     public ApiResponse<List<AttendanceReportResponse>> getReport(
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) String branchId) { // THÊM branchId
-
+            @RequestParam(required = false) String branchId
+    ) {
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         int targetMonth = (month != null) ? month : now.getMonthValue();
         int targetYear = (year != null) ? year : now.getYear();
@@ -45,10 +47,12 @@ public class AttendanceReportController {
     // 2. API CHO TRANG DASHBOARD
     @GetMapping("/dashboard")
     public ApiResponse<DashboardOverviewResponse> getDashboardOverview(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(required = false) String branchId) { // THÊM branchId
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate date,
 
-        // Nếu Frontend không gửi ngày lên, tự động lấy ngày hôm nay chuẩn giờ VN
+            @RequestParam(required = false) String branchId
+    ) {
         if (date == null) {
             date = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         }
@@ -59,15 +63,18 @@ public class AttendanceReportController {
                 .build();
     }
 
+    // 3. API CHO STAFF XEM LỊCH / ATTENDANCE HISTORY / REPORT
     @GetMapping("/staff/{staffId}")
-    public ApiResponse<List<com.group1.app.shift.dto.response.StaffAttendanceDetailsResponse>> getStaffHistory(
-            @org.springframework.web.bind.annotation.PathVariable String staffId,
+    public ApiResponse<List<StaffAttendanceDetailsResponse>> getStaffHistory(
+            @PathVariable String staffId,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate exactDate,
-            @RequestParam(required = false) String branchId) { // THÊM branchId
-
-        return ApiResponse.<List<com.group1.app.shift.dto.response.StaffAttendanceDetailsResponse>>builder()
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate exactDate,
+            @RequestParam(required = false) String branchId
+    ) {
+        return ApiResponse.<List<StaffAttendanceDetailsResponse>>builder()
                 .message("Lấy lịch sử nhân viên thành công")
                 .result(attendanceService.getStaffAttendanceHistory(staffId, month, year, exactDate, branchId))
                 .build();
