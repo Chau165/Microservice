@@ -20,7 +20,7 @@ import java.time.ZoneId;
 import java.util.List;
 
 @RestController
-@RequestMapping("/shift-service/attendance-reports")
+@RequestMapping("/api/shift-service/attendance-reports")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AttendanceReportController {
@@ -50,7 +50,6 @@ public class AttendanceReportController {
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate date,
-
             @RequestParam(required = false) String branchId
     ) {
         if (date == null) {
