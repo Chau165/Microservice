@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/shift-service/shifts/{shiftId}/attendance")
+@RequestMapping("/api/shift-service/shifts/{shiftId}/attendance")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AttendanceController {
