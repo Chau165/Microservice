@@ -20,7 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.regex.Pattern;
 
 @RestController
-@RequestMapping("api/metadata")
+@RequestMapping("/api/metadata")
 public class ConfigController {
 
 	private final EffectiveConfigService effectiveConfigService;

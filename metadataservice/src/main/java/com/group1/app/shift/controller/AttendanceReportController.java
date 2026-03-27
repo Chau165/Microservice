@@ -16,7 +16,7 @@ import java.time.ZoneId;
 import java.util.List;
 
 @RestController
-@RequestMapping("/shift-service/attendance-reports")
+@RequestMapping("/api/shift-service/attendance-reports")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AttendanceReportController {
