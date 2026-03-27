@@ -18,4 +18,6 @@ public class UpdateOpeningHoursRequest {
     @NotNull(message = "Close time must not be null")
     private LocalTime closeTime;
 
+    private Boolean isClosed = false;
+
 }

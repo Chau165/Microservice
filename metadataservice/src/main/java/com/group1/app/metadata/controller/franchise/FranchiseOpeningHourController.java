@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -18,6 +19,12 @@ import java.util.UUID;
 public class FranchiseOpeningHourController {
 
     private final FranchiseOpeningHourService service;
+
+    @GetMapping("/{franchiseId}/opening-hours")
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    public ApiResponse<List<OpeningHourResponse>> getOpeningHours(@PathVariable UUID franchiseId) {
+        return ApiResponse.success(service.getOpeningHours(franchiseId));
+    }
 
     @PutMapping("/{franchiseId}/opening-hours")
     @PreAuthorize("hasRole('MANAGER')")
