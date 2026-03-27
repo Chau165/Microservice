@@ -2,6 +2,7 @@ package com.group1.app.shift.dto.request;
 
 import com.group1.app.common.validation.ValidShiftTime;
 import com.group1.app.common.validation.ValidFutureShiftTime;
+import com.group1.app.common.validation.ValidFutureDate;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -20,6 +21,7 @@ import java.time.LocalTime;
 public class ShiftCreateRequest {
 
     @NotNull(message = "Date cannot be null")
+    @ValidFutureDate
     LocalDate date;
 
     @NotNull(message = "Start time cannot be null")
