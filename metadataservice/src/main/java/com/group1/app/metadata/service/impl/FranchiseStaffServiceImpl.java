@@ -50,7 +50,11 @@ public class FranchiseStaffServiceImpl implements FranchiseStaffService {
                 .orElseThrow(() -> new ApiException(ErrorCode.FS_001_STAFF_NOT_FOUND));
 
         franchiseStaffRepository
-                .findByStaffIdAndStatus(staffId, FranchiseStaffStatus.ACTIVE)
+                .findByStaffIdAndFranchiseIdAndStatus(
+                        staffId,
+                        franchiseId,
+                        FranchiseStaffStatus.ACTIVE
+                )
                 .ifPresent(fs -> {
                     throw new ApiException(ErrorCode.FS_002_STAFF_ALREADY_ASSIGNED);
                 });

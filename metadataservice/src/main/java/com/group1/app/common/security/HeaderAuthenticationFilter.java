@@ -36,10 +36,18 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        // Try both uppercase and lowercase header names (for case-insensitive handling)
         String userId = request.getHeader(HEADER_USER_ID);
+        if (userId == null) userId = request.getHeader(HEADER_USER_ID.toLowerCase());
+
         String role = request.getHeader(HEADER_USER_ROLE);
+        if (role == null) role = request.getHeader(HEADER_USER_ROLE.toLowerCase());
+
         String name = request.getHeader(HEADER_USER_NAME);
+        if (name == null) name = request.getHeader(HEADER_USER_NAME.toLowerCase());
+
         String permissionsHeader = request.getHeader(HEADER_USER_PERMISSIONS);
+        if (permissionsHeader == null) permissionsHeader = request.getHeader(HEADER_USER_PERMISSIONS.toLowerCase());
 
         String requestPath = request.getRequestURI();
         String requestMethod = request.getMethod();

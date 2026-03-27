@@ -61,7 +61,7 @@ public class UserController {
     }
 
     // Enable when dynamic permission is ready
-    @PreAuthorize("hasAuthority('USER_CREATE')")
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @PostMapping("/create-account")
     public ResponseEntity<BaseResponse<UserResponse>> createAccountByAdmin(
             @Valid @RequestBody CreateUserRequest request

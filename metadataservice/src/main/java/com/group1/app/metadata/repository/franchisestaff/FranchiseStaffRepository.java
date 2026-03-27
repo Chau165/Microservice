@@ -16,11 +16,6 @@ public interface FranchiseStaffRepository extends JpaRepository<FranchiseStaff, 
 
     List<FranchiseStaff> findAllByStaffId(String staffId);
 
-    Optional<FranchiseStaff> findByStaffIdAndStatus(
-            String staffId,
-            FranchiseStaffStatus status
-    );
-
     Optional<FranchiseStaff> findByStaffIdAndFranchiseIdAndStatus(
             String staffId,
             UUID franchiseId,

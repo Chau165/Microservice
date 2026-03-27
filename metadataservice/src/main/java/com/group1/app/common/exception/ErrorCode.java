@@ -43,7 +43,7 @@ public enum ErrorCode {
 
     // ===== FRANCHISE STAFF =====
     FS_001_STAFF_NOT_FOUND(HttpStatus.NOT_FOUND, "FS_001", "Staff not found"),
-    FS_002_STAFF_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "FS_002", "Staff already assigned to a franchise"),
+    FS_002_STAFF_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "FS_002", "Staff already assigned to this franchise"),
     FS_003_FRANCHISE_SUSPENDED(HttpStatus.CONFLICT, "FS_003", "Franchise is suspended"),
     FS_004_MAPPING_NOT_FOUND(HttpStatus.NOT_FOUND, "FS_004", "Franchise-staff mapping not found"),
     FS_005_INVALID_STAFF_ID(HttpStatus.BAD_REQUEST, "FS_005", "Invalid staff id"),
