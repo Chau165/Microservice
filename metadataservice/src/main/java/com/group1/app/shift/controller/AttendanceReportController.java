@@ -9,7 +9,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -23,6 +27,7 @@ public class AttendanceReportController {
 
     AttendanceService attendanceService;
 
+    // 1. API CHO TRANG ATTENDANCE COVERAGE REPORT
     @GetMapping
     public ApiResponse<List<AttendanceReportResponse>> getReport(
             @RequestParam(required = false) Integer month,
@@ -39,11 +44,13 @@ public class AttendanceReportController {
                 .build();
     }
 
+    // 2. API CHO TRANG DASHBOARD
     @GetMapping("/dashboard")
     public ApiResponse<DashboardOverviewResponse> getDashboardOverview(
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate date,
+
             @RequestParam(required = false) String branchId
     ) {
         if (date == null) {
@@ -56,7 +63,7 @@ public class AttendanceReportController {
                 .build();
     }
 
-    // Giữ endpoint cũ, nhưng staffId giờ là "identifier" (staffId/userId/email)
+    // 3. API CHO STAFF XEM LỊCH / ATTENDANCE HISTORY / REPORT
     @GetMapping("/staff/{staffId}")
     public ApiResponse<List<StaffAttendanceDetailsResponse>> getStaffHistory(
             @PathVariable String staffId,
@@ -71,33 +78,5 @@ public class AttendanceReportController {
                 .message("Lấy lịch sử nhân viên thành công")
                 .result(attendanceService.getStaffAttendanceHistory(staffId, month, year, exactDate, branchId))
                 .build();
-    }
-
-    // Endpoint mới cho staff tự xem (khuyến nghị FE gọi endpoint này)
-    @GetMapping("/staff/me")
-    public ApiResponse<List<StaffAttendanceDetailsResponse>> getMyHistory(
-            @RequestHeader(value = "USER", required = false) String userId,
-            @RequestHeader(value = "X-User-Email", required = false) String userEmail,
-            @RequestParam(required = false) Integer month,
-            @RequestParam(required = false) Integer year,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate exactDate,
-            @RequestParam(required = false) String branchId
-    ) {
-        String identifier = firstNonBlank(userId, userEmail);
-
-        return ApiResponse.<List<StaffAttendanceDetailsResponse>>builder()
-                .message("Lấy lịch sử nhân viên thành công")
-                .result(attendanceService.getStaffAttendanceHistory(identifier, month, year, exactDate, branchId))
-                .build();
-    }
-
-    private String firstNonBlank(String... values) {
-        if (values == null) return "";
-        for (String v : values) {
-            if (v != null && !v.trim().isEmpty()) return v.trim();
-        }
-        return "";
     }
 }

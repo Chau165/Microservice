@@ -59,6 +59,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         LocalDateTime allowCheckInTime = shiftStart.minusMinutes(30);
         LocalDateTime closeTime = shiftEnd.plusMinutes(30);
 
+        // Chỉ cho phép điểm danh trong khoảng mở -> đóng
         if (now.isBefore(allowCheckInTime)) {
             throw new AppException(ErrorCode.ATTENDANCE_NOT_OPEN_YET);
         }
@@ -98,16 +99,22 @@ public class AttendanceServiceImpl implements AttendanceService {
             Integer lateMins = existing != null ? safeInt(existing.getLateMinutes()) : 0;
             Integer earlyMins = existing != null ? safeInt(existing.getEarlyLeaveMinutes()) : 0;
 
+            // ===== CHECK-IN =====
             if (item.getStatus() == AttendanceStatus.PRESENT) {
                 long diff = Duration.between(shiftStart, now).toMinutes();
                 lateMins = (int) Math.max(0, diff);
                 actualStatus = lateMins > 0 ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
                 earlyMins = 0;
-            } else if (item.getStatus() == AttendanceStatus.EARLY_LEAVE) {
+            }
+
+            // ===== CHECK-OUT =====
+            else if (item.getStatus() == AttendanceStatus.EARLY_LEAVE) {
+                // Không cho checkout nếu chưa từng checkin
                 if (existing == null || existing.getStatus() == AttendanceStatus.ABSENT) {
                     throw new AppException(ErrorCode.CANNOT_CHECKOUT_BEFORE_CHECKIN, item.getStaffId());
                 }
 
+                // Nếu record trước đó chưa từng là check-in hợp lệ thì cũng không cho checkout
                 if (!(existing.getStatus() == AttendanceStatus.PRESENT
                         || existing.getStatus() == AttendanceStatus.LATE
                         || existing.getStatus() == AttendanceStatus.EARLY_LEAVE)) {
@@ -120,14 +127,19 @@ public class AttendanceServiceImpl implements AttendanceService {
                 if (earlyMins > 0) {
                     actualStatus = AttendanceStatus.EARLY_LEAVE;
                 } else {
+                    // Nếu trước đó đã từng đi trễ thì vẫn giữ LATE
                     actualStatus = (existing.getStatus() == AttendanceStatus.LATE)
                             ? AttendanceStatus.LATE
                             : AttendanceStatus.PRESENT;
                     earlyMins = 0;
                 }
 
+                // Giữ nguyên lateMinutes từ lần check-in trước
                 lateMins = safeInt(existing.getLateMinutes());
-            } else if (item.getStatus() == AttendanceStatus.ABSENT) {
+            }
+
+            // ===== ABSENT =====
+            else if (item.getStatus() == AttendanceStatus.ABSENT) {
                 actualStatus = AttendanceStatus.ABSENT;
                 lateMins = 0;
                 earlyMins = 0;
@@ -137,7 +149,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 existing.setStatus(actualStatus);
                 existing.setLateMinutes(lateMins);
                 existing.setEarlyLeaveMinutes(earlyMins);
-                existing.setUpdatedBy(markedBy);
+                existing.setUpdatedBy(markedBy); // nếu entity bạn không có field này thì xóa dòng này
                 return existing;
             } else {
                 return Attendance.builder()
@@ -236,7 +248,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         attendance.setStatus(actualStatus);
         attendance.setLateMinutes(lateMins);
         attendance.setEarlyLeaveMinutes(earlyMins);
-        attendance.setUpdatedBy(updatedBy);
+        attendance.setUpdatedBy(updatedBy); // nếu entity không có field này thì xóa dòng này
 
         Attendance saved = attendanceRepository.save(attendance);
 
@@ -272,6 +284,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         List<Attendance> list = new ArrayList<>(attendanceRepository.findAllByShiftId(shiftId));
 
+        // Tự động đánh vắng nếu đã hết ca + 30 phút mà chưa có attendance
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         LocalDateTime autoAbsentTime = getShiftEnd(shift).plusMinutes(30);
 
@@ -485,10 +498,8 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional(readOnly = true)
     public List<StaffAttendanceDetailsResponse> getStaffAttendanceHistory(String staffId, Integer month, Integer year, LocalDate exactDate, String branchId) {
-        String resolvedStaffId = resolveStaffIdFlexible(staffId);
-
         List<String> assignedShiftIds = shiftAssignmentRepository.findAll().stream()
-                .filter(a -> a.getStaffId().equals(resolvedStaffId))
+                .filter(a -> a.getStaffId().equals(staffId))
                 .map(ShiftAssignment::getShiftId)
                 .collect(Collectors.toList());
 
@@ -511,8 +522,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         Map<String, Attendance> attMap = attendanceRepository.findAll().stream()
-                .filter(a -> a.getStaffId().equals(resolvedStaffId))
-                .collect(Collectors.toMap(Attendance::getShiftId, a -> a, (x, y) -> x));
+                .filter(a -> a.getStaffId().equals(staffId))
+                .collect(Collectors.toMap(Attendance::getShiftId, a -> a));
 
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
 
@@ -568,8 +579,10 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     private LocalDateTime getShiftEnd(Shift shift) {
+        LocalDateTime start = getShiftStart(shift);
         LocalDateTime end = LocalDateTime.of(shift.getDate(), shift.getEndTime());
 
+        // Hỗ trợ ca qua đêm: ví dụ 22:00 -> 06:00
         if (shift.getEndTime().isBefore(shift.getStartTime()) || shift.getEndTime().equals(shift.getStartTime())) {
             end = end.plusDays(1);
         }
@@ -579,57 +592,6 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private Integer safeInt(Integer value) {
         return value != null ? value : 0;
-    }
-
-    /**
-     * Hỗ trợ FE truyền staffId hoặc user/account/email.
-     * Ưu tiên match staffId trước, nếu không có thì fallback quét Staff.
-     */
-    private String resolveStaffIdFlexible(String identifier) {
-        if (identifier == null || identifier.trim().isEmpty()) return identifier;
-        String key = identifier.trim();
-
-        if (staffRepository.existsById(key)) return key;
-
-        List<Staff> all = staffRepository.findAll();
-        for (Staff s : all) {
-            if (equalsIgnoreCase(key, s.getId())
-                    || equalsIgnoreCase(key, readProp(s, "staffId"))
-                    || equalsIgnoreCase(key, readProp(s, "userId"))
-                    || equalsIgnoreCase(key, readProp(s, "accountId"))
-                    || equalsIgnoreCase(key, readProp(s, "email"))
-                    || equalsIgnoreCase(key, readProp(s, "username"))
-                    || equalsIgnoreCase(key, readProp(s, "staffCode"))) {
-                return s.getId();
-            }
-        }
-
-        return key;
-    }
-
-    private boolean equalsIgnoreCase(String a, String b) {
-        return a != null && b != null && a.trim().equalsIgnoreCase(b.trim());
-    }
-
-    private String readProp(Object target, String name) {
-        if (target == null) return null;
-
-        try {
-            String getter = "get" + Character.toUpperCase(name.charAt(0)) + name.substring(1);
-            Object value = target.getClass().getMethod(getter).invoke(target);
-            return value == null ? null : String.valueOf(value);
-        } catch (Exception ignored) {
-        }
-
-        try {
-            java.lang.reflect.Field field = target.getClass().getDeclaredField(name);
-            field.setAccessible(true);
-            Object value = field.get(target);
-            return value == null ? null : String.valueOf(value);
-        } catch (Exception ignored) {
-        }
-
-        return null;
     }
 
     private AttendanceResponse toResponse(Attendance a, String staffName) {
