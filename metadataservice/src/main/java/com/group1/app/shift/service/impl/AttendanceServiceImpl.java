@@ -2,11 +2,7 @@ package com.group1.app.shift.service.impl;
 
 import com.group1.app.shift.dto.request.AttendanceItemRequest;
 import com.group1.app.shift.dto.request.BulkMarkAttendanceRequest;
-import com.group1.app.shift.dto.response.AttendanceReportResponse;
-import com.group1.app.shift.dto.response.AttendanceResponse;
-import com.group1.app.shift.dto.response.DashboardOverviewResponse;
-import com.group1.app.shift.dto.response.StaffAttendanceDetailsResponse;
-import com.group1.app.shift.dto.response.TimelineItemResponse;
+import com.group1.app.shift.dto.response.*;
 import com.group1.app.shift.entity.Attendance;
 import com.group1.app.shift.entity.Shift;
 import com.group1.app.shift.entity.ShiftAssignment;
@@ -30,10 +26,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,7 +53,6 @@ public class AttendanceServiceImpl implements AttendanceService {
         LocalDateTime allowCheckInTime = shiftStart.minusMinutes(30);
         LocalDateTime closeTime = shiftEnd.plusMinutes(30);
 
-        // Chỉ cho phép điểm danh trong khoảng mở -> đóng
         if (now.isBefore(allowCheckInTime)) {
             throw new AppException(ErrorCode.ATTENDANCE_NOT_OPEN_YET);
         }
@@ -80,7 +73,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         Map<String, String> staffNameMap = staffRepository.findAllById(requestedStaffIds)
                 .stream()
-                .collect(Collectors.toMap(Staff::getId, Staff::getName));
+                .collect(Collectors.toMap(
+                        Staff::getId,
+                        Staff::getName,
+                        (oldVal, newVal) -> oldVal
+                ));
 
         for (AttendanceItemRequest item : request.getAttendances()) {
             if (!assignedIds.contains(item.getStaffId())) {
@@ -88,9 +85,14 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
         }
 
+        // FIX: tránh Duplicate key nếu DB có record trùng
         Map<String, Attendance> existingMap = attendanceRepository.findAllByShiftId(shiftId)
                 .stream()
-                .collect(Collectors.toMap(Attendance::getStaffId, a -> a));
+                .collect(Collectors.toMap(
+                        Attendance::getStaffId,
+                        Function.identity(),
+                        this::pickLatestAttendance
+                ));
 
         List<Attendance> toSave = request.getAttendances().stream().map(item -> {
             Attendance existing = existingMap.get(item.getStaffId());
@@ -109,12 +111,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 
             // ===== CHECK-OUT =====
             else if (item.getStatus() == AttendanceStatus.EARLY_LEAVE) {
-                // Không cho checkout nếu chưa từng checkin
                 if (existing == null || existing.getStatus() == AttendanceStatus.ABSENT) {
                     throw new AppException(ErrorCode.CANNOT_CHECKOUT_BEFORE_CHECKIN, item.getStaffId());
                 }
 
-                // Nếu record trước đó chưa từng là check-in hợp lệ thì cũng không cho checkout
                 if (!(existing.getStatus() == AttendanceStatus.PRESENT
                         || existing.getStatus() == AttendanceStatus.LATE
                         || existing.getStatus() == AttendanceStatus.EARLY_LEAVE)) {
@@ -127,14 +127,12 @@ public class AttendanceServiceImpl implements AttendanceService {
                 if (earlyMins > 0) {
                     actualStatus = AttendanceStatus.EARLY_LEAVE;
                 } else {
-                    // Nếu trước đó đã từng đi trễ thì vẫn giữ LATE
                     actualStatus = (existing.getStatus() == AttendanceStatus.LATE)
                             ? AttendanceStatus.LATE
                             : AttendanceStatus.PRESENT;
                     earlyMins = 0;
                 }
 
-                // Giữ nguyên lateMinutes từ lần check-in trước
                 lateMins = safeInt(existing.getLateMinutes());
             }
 
@@ -149,7 +147,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 existing.setStatus(actualStatus);
                 existing.setLateMinutes(lateMins);
                 existing.setEarlyLeaveMinutes(earlyMins);
-                existing.setUpdatedBy(markedBy); // nếu entity bạn không có field này thì xóa dòng này
+                existing.setUpdatedBy(markedBy);
                 return existing;
             } else {
                 return Attendance.builder()
@@ -178,7 +176,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 asg.setStatus(ScheduleStatus.COMPLETED);
             }
             return asg;
-        }).filter(x -> x != null).collect(Collectors.toList());
+        }).filter(Objects::nonNull).collect(Collectors.toList());
 
         if (!assignmentsToUpdate.isEmpty()) {
             shiftAssignmentRepository.saveAll(assignmentsToUpdate);
@@ -248,7 +246,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         attendance.setStatus(actualStatus);
         attendance.setLateMinutes(lateMins);
         attendance.setEarlyLeaveMinutes(earlyMins);
-        attendance.setUpdatedBy(updatedBy); // nếu entity không có field này thì xóa dòng này
+        attendance.setUpdatedBy(updatedBy);
 
         Attendance saved = attendanceRepository.save(attendance);
 
@@ -272,10 +270,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         return toResponse(saved, staffName);
     }
 
-    // ... các phần trước giữ nguyên ...
-
     @Override
-    @Transactional(readOnly = true) // Lưu ý: Có thể bỏ readOnly nếu bạn muốn hệ thống tự lưu record vắng mặt vào DB
+    @Transactional(readOnly = true)
     public List<AttendanceResponse> getAttendanceByShift(String shiftId) {
         Shift shift = shiftRepository.findById(shiftId)
                 .orElseThrow(() -> new AppException(ErrorCode.SHIFT_NOT_FOUND));
@@ -285,41 +281,49 @@ public class AttendanceServiceImpl implements AttendanceService {
         LocalDateTime shiftEnd = getShiftEnd(shift);
         LocalDateTime autoClosingTime = shiftEnd.plusMinutes(30);
 
-        // LOGIC MỚI: Xử lý dữ liệu khi ca đã kết thúc (CLOSED)
         if (now.isAfter(autoClosingTime)) {
-            // 1. Tự động đánh vắng cho những người KHÔNG check-in (Giữ nguyên logic cũ của bạn)
             Set<String> existingStaffIds = list.stream().map(Attendance::getStaffId).collect(Collectors.toSet());
             List<ShiftAssignment> assignments = shiftAssignmentRepository.findAllByShiftId(shiftId);
 
             List<Attendance> autoAbsentList = assignments.stream()
                     .filter(a -> !existingStaffIds.contains(a.getStaffId()))
                     .map(a -> Attendance.builder()
-                            .shiftId(shiftId).staffId(a.getStaffId()).status(AttendanceStatus.ABSENT)
-                            .lateMinutes(0).earlyLeaveMinutes(0).markedBy("SYSTEM_AUTO").build())
+                            .shiftId(shiftId)
+                            .staffId(a.getStaffId())
+                            .status(AttendanceStatus.ABSENT)
+                            .lateMinutes(0)
+                            .earlyLeaveMinutes(0)
+                            .markedBy("SYSTEM_AUTO")
+                            .build())
                     .collect(Collectors.toList());
 
             if (!autoAbsentList.isEmpty()) {
                 attendanceRepository.saveAll(autoAbsentList);
                 list.addAll(autoAbsentList);
-                // Cập nhật trạng thái assignment thành CANCELED cho người vắng
+
                 assignments.stream()
                         .filter(a -> autoAbsentList.stream().anyMatch(x -> x.getStaffId().equals(a.getStaffId())))
-                        .forEach(a -> { a.setStatus(ScheduleStatus.CANCELED); shiftAssignmentRepository.save(a); });
+                        .forEach(a -> {
+                            a.setStatus(ScheduleStatus.CANCELED);
+                            shiftAssignmentRepository.save(a);
+                        });
             }
-
-            // 2. LOGIC QUÊN CHECK-OUT: Đối với những người ĐÃ check-in nhưng ca đã đóng
-            // Chúng ta sẽ map lại response để hiển thị là hoàn thành (không tính về sớm)
         }
 
-        Map<String, String> staffNameMap = staffRepository.findAllById(list.stream().map(Attendance::getStaffId).collect(Collectors.toList()))
-                .stream().collect(Collectors.toMap(Staff::getId, Staff::getName));
+        Map<String, String> staffNameMap = staffRepository.findAllById(
+                        list.stream().map(Attendance::getStaffId).distinct().collect(Collectors.toList())
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        Staff::getId,
+                        Staff::getName,
+                        (oldVal, newVal) -> oldVal
+                ));
 
         return list.stream()
                 .map(a -> {
                     AttendanceResponse res = toResponse(a, staffNameMap.getOrDefault(a.getStaffId(), "Unknown"));
 
-                    // Nếu ca đã đóng mà trạng thái vẫn là chỉ mới vào (PRESENT/LATE) và chưa có EarlyMins
-                    // Thì set earlyLeaveMinutes = 0 để tính là về đúng giờ
                     if (now.isAfter(autoClosingTime) &&
                             (a.getStatus() == AttendanceStatus.PRESENT || a.getStatus() == AttendanceStatus.LATE)) {
                         res.setEarlyLeaveMinutes(0);
@@ -341,8 +345,24 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .filter(s -> branchId == null || branchId.trim().isEmpty() || branchId.equals(s.getBranchId()))
                 .collect(Collectors.toList());
 
-        List<ShiftAssignment> assignments = shiftAssignmentRepository.findAll();
-        List<Attendance> attendances = attendanceRepository.findAll();
+        List<ShiftAssignment> assignments = shiftAssignmentRepository.findAll().stream()
+                .filter(a -> {
+                    Shift shift = allShifts.stream()
+                            .filter(s -> s.getId().equals(a.getShiftId()))
+                            .findFirst()
+                            .orElse(null);
+                    return shift != null;
+                })
+                .collect(Collectors.toList());
+
+        // FIX: map attendance theo shiftId + staffId để tránh duplicate data làm nổ report
+        Map<String, Attendance> attendanceMap = attendanceRepository.findAll().stream()
+                .collect(Collectors.toMap(
+                        a -> a.getShiftId() + "_" + a.getStaffId(),
+                        Function.identity(),
+                        this::pickLatestAttendance
+                ));
+
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
 
         return staffs.stream().map(staff -> {
@@ -354,7 +374,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                     List<Shift> staffShifts = assignments.stream()
                             .filter(a -> a.getStaffId().equals(staff.getId()))
                             .map(a -> allShifts.stream().filter(s -> s.getId().equals(a.getShiftId())).findFirst().orElse(null))
-                            .filter(s -> s != null)
+                            .filter(Objects::nonNull)
                             .collect(Collectors.toList());
 
                     for (Shift shift : staffShifts) {
@@ -366,10 +386,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                             int shiftDuration = (int) Duration.between(shiftStart, shiftEnd).toMinutes();
                             totalAssignedMins += shiftDuration;
 
-                            Attendance record = attendances.stream()
-                                    .filter(a -> a.getShiftId().equals(shift.getId()) && a.getStaffId().equals(staff.getId()))
-                                    .findFirst()
-                                    .orElse(null);
+                            Attendance record = attendanceMap.get(shift.getId() + "_" + staff.getId());
 
                             if (record != null) {
                                 if (record.getStatus() == AttendanceStatus.ABSENT) {
@@ -418,6 +435,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Transactional(readOnly = true)
     public DashboardOverviewResponse getDashboardOverview(LocalDate date, String branchId) {
         List<Shift> shifts;
+
         if (branchId != null && !branchId.trim().isEmpty()) {
             shifts = shiftRepository.findAllByDateAndBranchId(date, branchId);
         } else {
@@ -430,7 +448,14 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         for (Shift shift : shifts) {
             List<ShiftAssignment> assignments = shiftAssignmentRepository.findAllByShiftId(shift.getId());
-            List<Attendance> attendances = attendanceRepository.findAllByShiftId(shift.getId());
+
+            Map<String, Attendance> attendances = attendanceRepository.findAllByShiftId(shift.getId())
+                    .stream()
+                    .collect(Collectors.toMap(
+                            Attendance::getStaffId,
+                            Function.identity(),
+                            this::pickLatestAttendance
+                    ));
 
             int shiftAssignedCount = assignments.size();
             totalAssigned += shiftAssignedCount;
@@ -439,10 +464,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             LocalDateTime autoAbsentTime = getShiftEnd(shift).plusMinutes(30);
 
             for (ShiftAssignment assignment : assignments) {
-                Attendance record = attendances.stream()
-                        .filter(a -> a.getStaffId().equals(assignment.getStaffId()))
-                        .findFirst()
-                        .orElse(null);
+                Attendance record = attendances.get(assignment.getStaffId());
 
                 if (record != null) {
                     if (record.getStatus() == AttendanceStatus.PRESENT
@@ -479,7 +501,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                     .build());
         }
 
-        timeline.sort((a, b) -> a.getTime().compareTo(b.getTime()));
+        timeline.sort(Comparator.comparing(TimelineItemResponse::getTime));
         int coverage = totalAssigned > 0 ? Math.round(((float) presentCount / totalAssigned) * 100) : 0;
 
         return DashboardOverviewResponse.builder()
@@ -518,46 +540,51 @@ public class AttendanceServiceImpl implements AttendanceService {
                     .collect(Collectors.toList());
         }
 
+        // FIX: tránh duplicate key theo shiftId
         Map<String, Attendance> attMap = attendanceRepository.findAll().stream()
                 .filter(a -> a.getStaffId().equals(staffId))
-                .collect(Collectors.toMap(Attendance::getShiftId, a -> a));
+                .collect(Collectors.toMap(
+                        Attendance::getShiftId,
+                        Function.identity(),
+                        this::pickLatestAttendance
+                ));
 
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
 
         return shifts.stream().map(shift -> {
-                    Attendance record = attMap.get(shift.getId());
-                    String attStatus = "UNMARKED";
-                    Integer lateMins = 0;
-                    Integer earlyMins = 0;
+            Attendance record = attMap.get(shift.getId());
 
-                    if (record != null) {
-                        attStatus = record.getStatus().name();
-                        lateMins = safeInt(record.getLateMinutes());
-                        earlyMins = safeInt(record.getEarlyLeaveMinutes());
-                    } else {
-                        LocalDateTime autoAbsentTime = getShiftEnd(shift).plusMinutes(30);
-                        if (now.isAfter(autoAbsentTime)) {
-                            attStatus = "ABSENT";
-                        }
-                    }
+            String attStatus = "UNMARKED";
+            Integer lateMins = 0;
+            Integer earlyMins = 0;
 
-                    return StaffAttendanceDetailsResponse.builder()
-                            .shiftId(shift.getId())
-                            .date(shift.getDate())
-                            .startTime(shift.getStartTime())
-                            .endTime(shift.getEndTime())
-                            .branchId(shift.getBranchId())
-                            .shiftStatus(calculateShiftStatus(shift, now))
-                            .attendanceStatus(attStatus)
-                            .lateMinutes(lateMins)
-                            .earlyLeaveMinutes(earlyMins)
-                            .build();
-                }).sorted((a, b) -> {
-                    int dateCompare = b.getDate().compareTo(a.getDate());
-                    if (dateCompare != 0) return dateCompare;
-                    return b.getStartTime().compareTo(a.getStartTime());
-                })
-                .collect(Collectors.toList());
+            if (record != null) {
+                attStatus = record.getStatus().name();
+                lateMins = safeInt(record.getLateMinutes());
+                earlyMins = safeInt(record.getEarlyLeaveMinutes());
+            } else {
+                LocalDateTime autoAbsentTime = getShiftEnd(shift).plusMinutes(30);
+                if (now.isAfter(autoAbsentTime)) {
+                    attStatus = "ABSENT";
+                }
+            }
+
+            return StaffAttendanceDetailsResponse.builder()
+                    .shiftId(shift.getId())
+                    .date(shift.getDate())
+                    .startTime(shift.getStartTime())
+                    .endTime(shift.getEndTime())
+                    .branchId(shift.getBranchId())
+                    .shiftStatus(calculateShiftStatus(shift, now))
+                    .attendanceStatus(attStatus)
+                    .lateMinutes(lateMins)
+                    .earlyLeaveMinutes(earlyMins)
+                    .build();
+        }).sorted((a, b) -> {
+            int dateCompare = b.getDate().compareTo(a.getDate());
+            if (dateCompare != 0) return dateCompare;
+            return b.getStartTime().compareTo(a.getStartTime());
+        }).collect(Collectors.toList());
     }
 
     private String calculateShiftStatus(Shift shift, LocalDateTime now) {
@@ -576,10 +603,8 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     private LocalDateTime getShiftEnd(Shift shift) {
-        LocalDateTime start = getShiftStart(shift);
         LocalDateTime end = LocalDateTime.of(shift.getDate(), shift.getEndTime());
 
-        // Hỗ trợ ca qua đêm: ví dụ 22:00 -> 06:00
         if (shift.getEndTime().isBefore(shift.getStartTime()) || shift.getEndTime().equals(shift.getStartTime())) {
             end = end.plusDays(1);
         }
@@ -589,6 +614,18 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private Integer safeInt(Integer value) {
         return value != null ? value : 0;
+    }
+
+    // FIX: nếu có duplicate record thì ưu tiên record updated mới nhất
+    private Attendance pickLatestAttendance(Attendance a1, Attendance a2) {
+        LocalDateTime t1 = a1.getUpdatedAt() != null ? a1.getUpdatedAt() : a1.getMarkedAt();
+        LocalDateTime t2 = a2.getUpdatedAt() != null ? a2.getUpdatedAt() : a2.getMarkedAt();
+
+        if (t1 == null && t2 == null) return a1;
+        if (t1 == null) return a2;
+        if (t2 == null) return a1;
+
+        return t2.isAfter(t1) ? a2 : a1;
     }
 
     private AttendanceResponse toResponse(Attendance a, String staffName) {
