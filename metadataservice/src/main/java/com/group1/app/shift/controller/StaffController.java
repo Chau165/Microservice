@@ -24,6 +24,7 @@ public class StaffController {
     private final StaffService staffService;
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<StaffResponse> createStaff(
             @RequestBody @Valid StaffCreateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
@@ -44,6 +45,7 @@ public class StaffController {
 
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<Page<StaffResponse>> getAllStaff(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(defaultValue = "0") int page,
@@ -72,6 +74,7 @@ public class StaffController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<StaffResponse> updateStaffById(
             @PathVariable String id,
             @RequestBody @Valid StaffCreateRequest request,
