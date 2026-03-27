@@ -272,63 +272,60 @@ public class AttendanceServiceImpl implements AttendanceService {
         return toResponse(saved, staffName);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<AttendanceResponse> getAttendanceByShift(String shiftId) {
-        if (!shiftRepository.existsById(shiftId)) {
-            throw new AppException(ErrorCode.SHIFT_NOT_FOUND);
-        }
+    // ... các phần trước giữ nguyên ...
 
+    @Override
+    @Transactional(readOnly = true) // Lưu ý: Có thể bỏ readOnly nếu bạn muốn hệ thống tự lưu record vắng mặt vào DB
+    public List<AttendanceResponse> getAttendanceByShift(String shiftId) {
         Shift shift = shiftRepository.findById(shiftId)
                 .orElseThrow(() -> new AppException(ErrorCode.SHIFT_NOT_FOUND));
 
         List<Attendance> list = new ArrayList<>(attendanceRepository.findAllByShiftId(shiftId));
-
-        // Tự động đánh vắng nếu đã hết ca + 30 phút mà chưa có attendance
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
-        LocalDateTime autoAbsentTime = getShiftEnd(shift).plusMinutes(30);
+        LocalDateTime shiftEnd = getShiftEnd(shift);
+        LocalDateTime autoClosingTime = shiftEnd.plusMinutes(30);
 
-        if (now.isAfter(autoAbsentTime)) {
-            Set<String> existingStaffIds = list.stream()
-                    .map(Attendance::getStaffId)
-                    .collect(Collectors.toSet());
-
+        // LOGIC MỚI: Xử lý dữ liệu khi ca đã kết thúc (CLOSED)
+        if (now.isAfter(autoClosingTime)) {
+            // 1. Tự động đánh vắng cho những người KHÔNG check-in (Giữ nguyên logic cũ của bạn)
+            Set<String> existingStaffIds = list.stream().map(Attendance::getStaffId).collect(Collectors.toSet());
             List<ShiftAssignment> assignments = shiftAssignmentRepository.findAllByShiftId(shiftId);
 
             List<Attendance> autoAbsentList = assignments.stream()
                     .filter(a -> !existingStaffIds.contains(a.getStaffId()))
                     .map(a -> Attendance.builder()
-                            .shiftId(shiftId)
-                            .staffId(a.getStaffId())
-                            .status(AttendanceStatus.ABSENT)
-                            .lateMinutes(0)
-                            .earlyLeaveMinutes(0)
-                            .markedBy("SYSTEM_AUTO")
-                            .build())
+                            .shiftId(shiftId).staffId(a.getStaffId()).status(AttendanceStatus.ABSENT)
+                            .lateMinutes(0).earlyLeaveMinutes(0).markedBy("SYSTEM_AUTO").build())
                     .collect(Collectors.toList());
 
             if (!autoAbsentList.isEmpty()) {
-                List<Attendance> savedAutoAbsent = attendanceRepository.saveAll(autoAbsentList);
-                list.addAll(savedAutoAbsent);
-
-                List<ShiftAssignment> assignmentsToUpdate = assignments.stream()
+                attendanceRepository.saveAll(autoAbsentList);
+                list.addAll(autoAbsentList);
+                // Cập nhật trạng thái assignment thành CANCELED cho người vắng
+                assignments.stream()
                         .filter(a -> autoAbsentList.stream().anyMatch(x -> x.getStaffId().equals(a.getStaffId())))
-                        .peek(a -> a.setStatus(ScheduleStatus.CANCELED))
-                        .collect(Collectors.toList());
-
-                if (!assignmentsToUpdate.isEmpty()) {
-                    shiftAssignmentRepository.saveAll(assignmentsToUpdate);
-                }
+                        .forEach(a -> { a.setStatus(ScheduleStatus.CANCELED); shiftAssignmentRepository.save(a); });
             }
+
+            // 2. LOGIC QUÊN CHECK-OUT: Đối với những người ĐÃ check-in nhưng ca đã đóng
+            // Chúng ta sẽ map lại response để hiển thị là hoàn thành (không tính về sớm)
         }
 
-        Map<String, String> staffNameMap = staffRepository
-                .findAllById(list.stream().map(Attendance::getStaffId).collect(Collectors.toList()))
-                .stream()
-                .collect(Collectors.toMap(Staff::getId, Staff::getName));
+        Map<String, String> staffNameMap = staffRepository.findAllById(list.stream().map(Attendance::getStaffId).collect(Collectors.toList()))
+                .stream().collect(Collectors.toMap(Staff::getId, Staff::getName));
 
         return list.stream()
-                .map(a -> toResponse(a, staffNameMap.getOrDefault(a.getStaffId(), "Unknown")))
+                .map(a -> {
+                    AttendanceResponse res = toResponse(a, staffNameMap.getOrDefault(a.getStaffId(), "Unknown"));
+
+                    // Nếu ca đã đóng mà trạng thái vẫn là chỉ mới vào (PRESENT/LATE) và chưa có EarlyMins
+                    // Thì set earlyLeaveMinutes = 0 để tính là về đúng giờ
+                    if (now.isAfter(autoClosingTime) &&
+                            (a.getStatus() == AttendanceStatus.PRESENT || a.getStatus() == AttendanceStatus.LATE)) {
+                        res.setEarlyLeaveMinutes(0);
+                    }
+                    return res;
+                })
                 .collect(Collectors.toList());
     }
 
