@@ -4,6 +4,7 @@ import com.group1.app.common.response.ApiResponse;
 import com.group1.app.common.security.UserPrincipal;
 import com.group1.app.metadata.dto.franchise.request.*;
 import com.group1.app.metadata.dto.franchise.response.FranchiseConfigurationResponse;
+import com.group1.app.metadata.dto.franchise.response.FranchiseOwnerProfileResponse;
 import com.group1.app.metadata.dto.franchise.response.FranchiseResponse;
 import com.group1.app.metadata.service.FranchiseService;
 import jakarta.validation.Valid;
@@ -55,6 +56,16 @@ public class FranchiseController {
     public ApiResponse<FranchiseResponse> getById(@PathVariable UUID id) {
         return ApiResponse.success(
                 franchiseService.getById(id)
+        );
+    }
+
+    @GetMapping("/owners/{ownerId}/profile")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ApiResponse<FranchiseOwnerProfileResponse> getOwnerProfile(
+            @PathVariable UUID ownerId
+    ) {
+        return ApiResponse.success(
+                franchiseService.getOwnerProfile(ownerId)
         );
     }
 

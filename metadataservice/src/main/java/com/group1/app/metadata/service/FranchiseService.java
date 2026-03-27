@@ -2,6 +2,7 @@ package com.group1.app.metadata.service;
 
 import com.group1.app.metadata.dto.franchise.request.CreateFranchiseRequest;
 import com.group1.app.metadata.dto.franchise.request.UpdateFranchiseRequest;
+import com.group1.app.metadata.dto.franchise.response.FranchiseOwnerProfileResponse;
 import com.group1.app.metadata.dto.franchise.response.FranchiseResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,8 @@ public interface FranchiseService {
     List<FranchiseResponse> getAll();
 
     FranchiseResponse getById(UUID id);
+
+    FranchiseOwnerProfileResponse getOwnerProfile(UUID ownerId);
 
     FranchiseResponse updateIdentity(UUID id, UpdateFranchiseRequest request, String changedBy);
 
