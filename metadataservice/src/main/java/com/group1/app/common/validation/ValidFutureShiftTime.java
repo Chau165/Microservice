@@ -9,7 +9,7 @@ import java.lang.annotation.*;
 @Constraint(validatedBy = FutureShiftTimeValidator.class)
 @Documented
 public @interface ValidFutureShiftTime {
-    String message() default "Shift start time must be greater than current time";
+    String message() default "Shift start time must be greater than current time. Please select a time in the future";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

@@ -16,12 +16,12 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@ValidShiftTime
-@ValidFutureShiftTime
+@ValidShiftTime(message = "End time must be greater than start time")
+@ValidFutureShiftTime(message = "Shift start time must be greater than current time")
 public class ShiftUpdateRequest {
 
     @NotNull(message = "Date cannot be null")
-    @ValidFutureDate
+    @ValidFutureDate(message = "Date must be today or in the future")
     LocalDate date;
 
     @NotNull(message = "Start time cannot be null")
