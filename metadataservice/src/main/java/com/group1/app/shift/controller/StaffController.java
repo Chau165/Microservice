@@ -68,6 +68,20 @@ public class StaffController {
             .build();
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<StaffResponse> getCurrentStaff(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        if (userPrincipal == null) {
+            throw new AccessDeniedException("Missing authentication");
+        }
+
+        return ApiResponse.<StaffResponse>builder()
+                .result(staffService.getStaffByUserId(userPrincipal.getUserId()))
+                .build();
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<StaffResponse> getStaffById(@PathVariable String id) {
         return ApiResponse.<StaffResponse>builder().result(staffService.getStaffById(id)).build();

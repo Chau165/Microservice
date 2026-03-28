@@ -11,6 +11,7 @@ public interface StaffService {
     StaffResponse updateStaff(String id, StaffCreateRequest request);
     void deleteStaff(String id);
     StaffResponse getStaffById(String id);
+    StaffResponse getStaffByUserId(String userId);
     Page<StaffResponse> getAllStaffs(String managerUserId, int page, int size);
     StaffResponse updateStatus(String id, StaffStatusRequest request);
 }

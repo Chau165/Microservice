@@ -121,6 +121,13 @@ public class StaffServiceImpl implements StaffService {
     }
 
     @Override
+    public StaffResponse getStaffByUserId(String userId) {
+        return staffRepository.findByUserId(userId)
+                .map(this::mapToResponse)
+                .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND, userId));
+    }
+
+    @Override
     public Page<StaffResponse> getAllStaffs(String managerUserId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
