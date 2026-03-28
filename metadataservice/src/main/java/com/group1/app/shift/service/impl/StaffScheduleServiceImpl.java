@@ -6,9 +6,11 @@ import com.group1.app.shift.dto.response.StaffScheduleResponse;
 import com.group1.app.shift.dto.response.StaffScheduleWithAttendanceResponse;
 import com.group1.app.shift.entity.ShiftAssignment;
 import com.group1.app.shift.entity.Attendance;
+import com.group1.app.shift.entity.Shift;
 import com.group1.app.shift.exception.AppException;
 import com.group1.app.shift.exception.ErrorCode;
 import com.group1.app.shift.repository.ShiftAssignmentRepository;
+import com.group1.app.shift.repository.ShiftRepository;
 import com.group1.app.shift.repository.StaffRepository;
 import com.group1.app.shift.repository.AttendanceRepository;
 import com.group1.app.shift.service.StaffScheduleService;
@@ -18,6 +20,9 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +34,7 @@ import java.util.stream.Collectors;
 public class StaffScheduleServiceImpl implements StaffScheduleService {
 
     ShiftAssignmentRepository shiftAssignmentRepository;
+    ShiftRepository shiftRepository;
     StaffRepository staffRepository;
     AttendanceRepository attendanceRepository;
 
@@ -95,27 +101,45 @@ public class StaffScheduleServiceImpl implements StaffScheduleService {
         }
 
         List<ShiftAssignment> assignments = shiftAssignmentRepository.findAllByStaffId(staffId);
+
+        // Load shifts for these assignments
+        List<Shift> shifts = shiftRepository.findAllById(
+            assignments.stream().map(ShiftAssignment::getShiftId).collect(Collectors.toList())
+        );
+        Map<String, Shift> shiftMap = shifts.stream().collect(Collectors.toMap(Shift::getId, s -> s));
+
         // load attendances for this staff
         Map<String, Attendance> attMap = attendanceRepository.findAll().stream()
                 .filter(a -> a.getStaffId().equals(staffId))
                 .collect(Collectors.toMap(Attendance::getShiftId, a -> a));
 
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
 
         return assignments.stream().map(a -> {
             Attendance rec = attMap.get(a.getShiftId());
             String status;
-            if (rec == null) {
-                status = "SCHEDULED";
-            } else if (rec.getStatus() != null && rec.getStatus().name().equals("ABSENT")) {
-                status = "ABSENT";
-            } else {
-                // Attendance entity in this project doesn't store check-in/out timestamps, so derive using status and markedAt
-                // If attendance exists and status not ABSENT -> treat as COMPLETED
-                // But to satisfy IN_PROGRESS rule, check if markedAt exists and updatedAt is null (best-effort)
-                if (rec.getMarkedAt() != null && rec.getUpdatedAt() == null) {
+
+            if (rec != null) {
+                // Attendance record exists, use its status
+                if (rec.getStatus() != null && rec.getStatus().name().equals("ABSENT")) {
+                    status = "ABSENT";
+                } else if (rec.getMarkedAt() != null && rec.getUpdatedAt() == null) {
                     status = "IN_PROGRESS";
                 } else if (rec.getMarkedAt() != null) {
                     status = "COMPLETED";
+                } else {
+                    status = "SCHEDULED";
+                }
+            } else {
+                // No attendance record - check if shift time has passed
+                Shift shift = shiftMap.get(a.getShiftId());
+                if (shift != null) {
+                    LocalDateTime autoAbsentTime = LocalDateTime.of(shift.getDate(), shift.getEndTime()).plusMinutes(30);
+                    if (now.isAfter(autoAbsentTime)) {
+                        status = "ABSENT";
+                    } else {
+                        status = "SCHEDULED";
+                    }
                 } else {
                     status = "SCHEDULED";
                 }
