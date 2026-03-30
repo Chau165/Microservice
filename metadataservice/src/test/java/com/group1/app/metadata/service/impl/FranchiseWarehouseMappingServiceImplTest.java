@@ -20,8 +20,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class FranchiseWarehouseMappingServiceImplTest {
@@ -57,31 +62,93 @@ class FranchiseWarehouseMappingServiceImplTest {
     }
 
     @Test
-    void updateWarehouseMapping_warehouseNotFound() {
+    void updateWarehouseMapping_createsAdditionalActiveMappingWhenWarehouseIsNew() {
         UUID id = UUID.randomUUID();
-        Franchise f = new Franchise(); f.setId(id); f.setStatus(com.group1.app.metadata.entity.franchise.FranchiseStatus.LIVE);
-        when(franchiseRepository.findById(id)).thenReturn(Optional.of(f));
-        when(warehouseClient.getWarehouseById("w")).thenReturn(null);
+        Franchise franchise = new Franchise();
+        franchise.setId(id);
+        franchise.setStatus(com.group1.app.metadata.entity.franchise.FranchiseStatus.LIVE);
 
-        ApiException ex = assertThrows(ApiException.class, () -> service.updateWarehouseMapping(id, "w", "u"));
-        assertEquals(ErrorCode.WM_001_WAREHOUSE_NOT_FOUND, ex.getErrorCode());
-    }
-
-    @Test
-    void updateWarehouseMapping_success_createNew() {
-        UUID id = UUID.randomUUID();
-        Franchise f = new Franchise(); f.setId(id); f.setStatus(com.group1.app.metadata.entity.franchise.FranchiseStatus.LIVE);
-        when(franchiseRepository.findById(id)).thenReturn(Optional.of(f));
-        when(warehouseClient.getWarehouseById("w")).thenReturn(warehouseNode);
-        when(warehouseMappingRepository.findByFranchise_IdAndStatus(id, FranchiseWarehouseMappingStatus.ACTIVE))
-                .thenReturn(Optional.empty());
-
+        when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
+        when(warehouseMappingRepository.findByFranchise_IdAndWarehouseIdAndStatus(
+                id,
+                "w",
+                FranchiseWarehouseMappingStatus.ACTIVE
+        )).thenReturn(Optional.empty());
         when(warehouseMappingRepository.save(any(FranchiseWarehouseMapping.class))).thenAnswer(i -> i.getArgument(0));
 
         var resp = service.updateWarehouseMapping(id, "w", "u");
 
         assertNotNull(resp);
-        assertEquals(id, resp.franchiseId());
+        assertEquals("w", resp.warehouseId());
+    }
+
+    @Test
+    void updateWarehouseMapping_sameWarehouseAlreadyActive_returnsExistingMapping() {
+        UUID id = UUID.randomUUID();
+        Franchise franchise = new Franchise();
+        franchise.setId(id);
+        franchise.setStatus(com.group1.app.metadata.entity.franchise.FranchiseStatus.LIVE);
+
+        FranchiseWarehouseMapping existing = new FranchiseWarehouseMapping();
+        existing.setWarehouseId("w1");
+        existing.setStatus(FranchiseWarehouseMappingStatus.ACTIVE);
+
+        when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
+        when(warehouseMappingRepository.findByFranchise_IdAndWarehouseIdAndStatus(
+                id,
+                "w1",
+                FranchiseWarehouseMappingStatus.ACTIVE
+        )).thenReturn(Optional.of(existing));
+
+        var resp = service.updateWarehouseMapping(id, "w1", "u");
+
+        assertNotNull(resp);
+        assertEquals("w1", resp.warehouseId());
+        verify(warehouseMappingRepository, never()).save(any(FranchiseWarehouseMapping.class));
+    }
+
+    @Test
+    void createWarehouseMapping_allowsMultipleActiveWarehousesForSameFranchise() {
+        UUID id = UUID.randomUUID();
+        Franchise franchise = new Franchise();
+        franchise.setId(id);
+        franchise.setStatus(com.group1.app.metadata.entity.franchise.FranchiseStatus.LIVE);
+
+        when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
+        when(warehouseMappingRepository.findByFranchise_IdAndWarehouseIdAndStatus(
+                id,
+                "w2",
+                FranchiseWarehouseMappingStatus.ACTIVE
+        )).thenReturn(Optional.empty());
+        when(warehouseMappingRepository.save(any(FranchiseWarehouseMapping.class))).thenAnswer(i -> i.getArgument(0));
+
+        var resp = service.createWarehouseMapping(id, "w2", "u");
+
+        assertNotNull(resp);
+        assertEquals("w2", resp.warehouseId());
+        verify(warehouseMappingRepository, never()).findByFranchise_IdAndStatus(any(), any());
+    }
+
+    @Test
+    void createWarehouseMapping_duplicateActiveSameWarehouse_throwsConflict() {
+        UUID id = UUID.randomUUID();
+        Franchise franchise = new Franchise();
+        franchise.setId(id);
+        franchise.setStatus(com.group1.app.metadata.entity.franchise.FranchiseStatus.LIVE);
+
+        FranchiseWarehouseMapping existing = new FranchiseWarehouseMapping();
+        existing.setWarehouseId("w1");
+        existing.setStatus(FranchiseWarehouseMappingStatus.ACTIVE);
+
+        when(franchiseRepository.findById(id)).thenReturn(Optional.of(franchise));
+        when(warehouseMappingRepository.findByFranchise_IdAndWarehouseIdAndStatus(
+                id,
+                "w1",
+                FranchiseWarehouseMappingStatus.ACTIVE
+        )).thenReturn(Optional.of(existing));
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.createWarehouseMapping(id, "w1", "u"));
+        assertEquals(ErrorCode.WM_003_ACTIVE_WAREHOUSE_MAPPING_EXISTS, ex.getErrorCode());
     }
 
     @Test
@@ -108,4 +175,3 @@ class FranchiseWarehouseMappingServiceImplTest {
         assertEquals("w1", result.get(0).getWarehouseId());
     }
 }
-

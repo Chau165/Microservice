@@ -18,4 +18,10 @@ public interface FranchiseWarehouseMappingRepository extends JpaRepository<Franc
             UUID franchiseId,
             FranchiseWarehouseMappingStatus status
     );
+
+    Optional<FranchiseWarehouseMapping> findByFranchise_IdAndWarehouseIdAndStatus(
+            UUID franchiseId,
+            String warehouseId,
+            FranchiseWarehouseMappingStatus status
+    );
 }

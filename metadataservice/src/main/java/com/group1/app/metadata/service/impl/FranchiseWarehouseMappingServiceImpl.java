@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -36,47 +37,35 @@ public class FranchiseWarehouseMappingServiceImpl implements FranchiseWarehouseM
 
     @Override
     public WarehouseMappingResponse createWarehouseMapping(UUID franchiseId, String warehouseId, String createdBy) {
+        Franchise franchise = getValidatedFranchise(franchiseId);
+        String normalizedWarehouseId = warehouseId.trim();
 
-        Franchise franchise = franchiseRepository.findById(franchiseId)
-                .orElseThrow(() -> new ApiException(ErrorCode.FR_404_FRANCHISE_NOT_FOUND));
-
-        if (franchise.getStatus().name().equals("SUSPENDED")) {
-            throw new ApiException(ErrorCode.INVALID_FRANCHISE_STATUS);
-        }
-
-                // Warehouse existence check removed: accept warehouseId as-is from client
-
-        // Check if there's already an active mapping for this franchise
-        var activeMappingOpt = warehouseMappingRepository.findByFranchise_IdAndStatus(
-                franchiseId,
-                FranchiseWarehouseMappingStatus.ACTIVE
-        );
+        Optional<FranchiseWarehouseMapping> activeMappingOpt =
+                warehouseMappingRepository.findByFranchise_IdAndWarehouseIdAndStatus(
+                        franchiseId,
+                        normalizedWarehouseId,
+                        FranchiseWarehouseMappingStatus.ACTIVE
+                );
 
         if (activeMappingOpt.isPresent()) {
             throw new ApiException(ErrorCode.WM_003_ACTIVE_WAREHOUSE_MAPPING_EXISTS);
         }
 
-        // Create new mapping
         FranchiseWarehouseMapping newMapping = FranchiseWarehouseMapping.builder()
                 .franchise(franchise)
-                .warehouseId(warehouseId)
+                .warehouseId(normalizedWarehouseId)
                 .status(FranchiseWarehouseMappingStatus.ACTIVE)
                 .assignedAt(Instant.now())
                 .build();
         warehouseMappingRepository.save(newMapping);
 
-        // Update OperationalConfig flag
-        operationalConfigRepository.findByFranchiseId(franchiseId)
-                .ifPresent(config -> {
-                    config.setWarehouseMappingConfigured(true);
-                    operationalConfigRepository.save(config);
-                });
+        markWarehouseMappingConfigured(franchiseId);
 
         eventPublisher.publishEvent(
                 new WarehouseMappingChangedEvent(
                         franchiseId,
                         null,
-                        warehouseId,
+                        normalizedWarehouseId,
                         createdBy,
                         LocalDateTime.now()
                 )
@@ -84,7 +73,7 @@ public class FranchiseWarehouseMappingServiceImpl implements FranchiseWarehouseM
 
         return new WarehouseMappingResponse(
                 franchiseId,
-                warehouseId,
+                normalizedWarehouseId,
                 FranchiseWarehouseMappingStatus.ACTIVE.name(),
                 newMapping.getAssignedAt()
         );
@@ -92,62 +81,41 @@ public class FranchiseWarehouseMappingServiceImpl implements FranchiseWarehouseM
 
     @Override
     public WarehouseMappingResponse updateWarehouseMapping(UUID franchiseId, String warehouseId, String changedBy) {
+        Franchise franchise = getValidatedFranchise(franchiseId);
+        String normalizedWarehouseId = warehouseId.trim();
 
-        Franchise franchise = franchiseRepository.findById(franchiseId)
-                .orElseThrow(() -> new ApiException(ErrorCode.FR_404_FRANCHISE_NOT_FOUND));
-
-        if (franchise.getStatus().name().equals("SUSPENDED")) {
-            throw new ApiException(ErrorCode.INVALID_FRANCHISE_STATUS);
-        }
-
-                // Warehouse existence check removed: accept warehouseId as-is from client
-
-        String oldWarehouseId = null;
-
-        var activeMappingOpt = warehouseMappingRepository.findByFranchise_IdAndStatus(
-                franchiseId,
-                FranchiseWarehouseMappingStatus.ACTIVE
-        );
+        Optional<FranchiseWarehouseMapping> activeMappingOpt =
+                warehouseMappingRepository.findByFranchise_IdAndWarehouseIdAndStatus(
+                        franchiseId,
+                        normalizedWarehouseId,
+                        FranchiseWarehouseMappingStatus.ACTIVE
+                );
 
         if (activeMappingOpt.isPresent()) {
-            FranchiseWarehouseMapping oldMapping = activeMappingOpt.get();
-            oldWarehouseId = oldMapping.getWarehouseId();
-
-            // No change — return current mapping as-is
-            if (oldWarehouseId.equals(warehouseId)) {
-                return new WarehouseMappingResponse(
-                        franchiseId,
-                        warehouseId,
-                        oldMapping.getStatus().name(),
-                        oldMapping.getAssignedAt()
-                );
-            }
-
-            oldMapping.setStatus(FranchiseWarehouseMappingStatus.INACTIVE);
-            oldMapping.setUnassignedAt(Instant.now());
-            warehouseMappingRepository.save(oldMapping);
+            FranchiseWarehouseMapping activeMapping = activeMappingOpt.get();
+            return new WarehouseMappingResponse(
+                    franchiseId,
+                    normalizedWarehouseId,
+                    activeMapping.getStatus().name(),
+                    activeMapping.getAssignedAt()
+            );
         }
 
         FranchiseWarehouseMapping newMapping = FranchiseWarehouseMapping.builder()
                 .franchise(franchise)
-                .warehouseId(warehouseId)
+                .warehouseId(normalizedWarehouseId)
                 .status(FranchiseWarehouseMappingStatus.ACTIVE)
                 .assignedAt(Instant.now())
                 .build();
         warehouseMappingRepository.save(newMapping);
 
-        // Update OperationalConfig flag
-        operationalConfigRepository.findByFranchiseId(franchiseId)
-                .ifPresent(config -> {
-                    config.setWarehouseMappingConfigured(true);
-                    operationalConfigRepository.save(config);
-                });
+        markWarehouseMappingConfigured(franchiseId);
 
         eventPublisher.publishEvent(
                 new WarehouseMappingChangedEvent(
                         franchiseId,
-                        oldWarehouseId,
-                        warehouseId,
+                        null,
+                        normalizedWarehouseId,
                         changedBy,
                         LocalDateTime.now()
                 )
@@ -155,7 +123,7 @@ public class FranchiseWarehouseMappingServiceImpl implements FranchiseWarehouseM
 
         return new WarehouseMappingResponse(
                 franchiseId,
-                warehouseId,
+                normalizedWarehouseId,
                 FranchiseWarehouseMappingStatus.ACTIVE.name(),
                 newMapping.getAssignedAt()
         );
@@ -180,5 +148,24 @@ public class FranchiseWarehouseMappingServiceImpl implements FranchiseWarehouseM
                         mapping.getFranchise() != null ? mapping.getFranchise().getId() : null
                 ))
                 .toList();
+    }
+
+    private Franchise getValidatedFranchise(UUID franchiseId) {
+        Franchise franchise = franchiseRepository.findById(franchiseId)
+                .orElseThrow(() -> new ApiException(ErrorCode.FR_404_FRANCHISE_NOT_FOUND));
+
+        if (franchise.getStatus() == null || franchise.getStatus().name().equals("SUSPENDED")) {
+            throw new ApiException(ErrorCode.INVALID_FRANCHISE_STATUS);
+        }
+
+        return franchise;
+    }
+
+    private void markWarehouseMappingConfigured(UUID franchiseId) {
+        operationalConfigRepository.findByFranchiseId(franchiseId)
+                .ifPresent(config -> {
+                    config.setWarehouseMappingConfigured(true);
+                    operationalConfigRepository.save(config);
+                });
     }
 }
