@@ -58,6 +58,11 @@ public class UserServiceImp implements UserService {
                     "Email này đã tồn tại trên hệ thống, vui lòng sử dụng email khác");
         }
 
+        if (usersRepository.existsByPhone(request.getPhone())) {
+            throw new BadRequestException(
+                    "Phone này đã tồn tại trên hệ thống, vui lòng sử dụng phone khác");
+        }
+
         Users user = userMapper.toEntityCreateUserWithRoleByAdmin(
                 request,
                 passwordEncoder.encode("Demo@123")

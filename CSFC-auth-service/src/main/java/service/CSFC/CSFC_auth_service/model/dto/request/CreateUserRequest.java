@@ -19,6 +19,7 @@ public class CreateUserRequest {
     @NotBlank(message="Họ và tên không được để trống")
     private String name;
     private String address;
+    private String phone;
 
     private Roles role;
 }

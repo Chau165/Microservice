@@ -55,9 +55,33 @@ public class GlobalExceptionHandler {
     // ---- Validation (shared) ----
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<?>> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
+        StringBuilder messageBuilder = new StringBuilder();
+
+        // Get field errors
+        String fieldErrors = ex.getBindingResult().getFieldErrors().stream()
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .collect(Collectors.joining("; "));
+
+        // Get global errors (from class-level annotations like @ValidFutureShiftTime)
+        String globalErrors = ex.getBindingResult().getGlobalErrors().stream()
+                .map(ge -> ge.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+
+        if (!fieldErrors.isEmpty()) {
+            messageBuilder.append(fieldErrors);
+        }
+        if (!globalErrors.isEmpty()) {
+            if (!fieldErrors.isEmpty()) {
+                messageBuilder.append("; ");
+            }
+            messageBuilder.append(globalErrors);
+        }
+
+        String message = messageBuilder.toString();
+        if (message.isEmpty()) {
+            message = "Validation failed";
+        }
+
         ApiError error = ApiError.builder().code("VALIDATION_ERROR").message(message).path(req.getRequestURI()).build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.<Object>builder()
