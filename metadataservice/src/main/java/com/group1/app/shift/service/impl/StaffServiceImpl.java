@@ -12,11 +12,14 @@ import com.group1.app.shift.service.StaffService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +31,10 @@ import java.util.Optional;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class StaffServiceImpl implements StaffService {
     StaffRepository staffRepository;
+    WebClient webClient;
+
+    @Value("${auth-service.url:http://localhost:8081}")
+    String authServiceUrl;
 
     @Override
     public StaffResponse createStaff(StaffCreateRequest request) {
@@ -119,6 +126,21 @@ public class StaffServiceImpl implements StaffService {
             throw new AppException(ErrorCode.INVALID_INPUT, errors);
         }
 
+        // Xóa tài khoản user nếu có userId
+        if (StringUtils.hasText(staff.getUserId())) {
+            try {
+                webClient.delete()
+                        .uri(authServiceUrl + "/users/{userId}", staff.getUserId())
+                        .retrieve()
+                        .toBodilessEntity()
+                        .block();
+            } catch (Exception e) {
+                // Log lỗi nhưng vẫn xóa staff (tránh lỗi cascade)
+                System.err.println("Failed to delete user account: " + e.getMessage());
+            }
+        }
+
+        // Xóa staff khỏi database
         staffRepository.deleteById(id);
     }
 
