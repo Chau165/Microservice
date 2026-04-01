@@ -350,8 +350,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AttendanceReportResponse> getAttendanceReport(int month, int year, String branchId) {
-        List<Staff> staffs = staffRepository.findAll().stream()
+    public List<AttendanceReportResponse> getAttendanceReport(int month, int year, String branchId, String managerUserId) {
+        // Lấy staffs của manager đó thôi, không lấy toàn bộ staff
+        List<Staff> staffs = staffRepository.findByManagerUserId(managerUserId).stream()
                 .filter(s -> branchId == null || branchId.trim().isEmpty() || branchId.equals(s.getBranchId()))
                 .collect(Collectors.toList());
 

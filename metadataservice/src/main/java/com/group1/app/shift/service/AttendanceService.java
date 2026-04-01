@@ -23,6 +23,6 @@ public interface AttendanceService {
 
     // THÊM branchId VÀO 3 HÀM DƯỚI
     DashboardOverviewResponse getDashboardOverview(LocalDate date, String branchId);
-    List<AttendanceReportResponse> getAttendanceReport(int month, int year, String branchId);
+    List<AttendanceReportResponse> getAttendanceReport(int month, int year, String branchId, String managerUserId);
     List<StaffAttendanceDetailsResponse> getStaffAttendanceHistory(String staffId, Integer month, Integer year, LocalDate exactDate, String branchId);
 }
