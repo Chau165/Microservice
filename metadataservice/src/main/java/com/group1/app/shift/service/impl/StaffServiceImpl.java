@@ -4,6 +4,7 @@ import com.group1.app.shift.dto.request.StaffCreateRequest;
 import com.group1.app.shift.dto.request.StaffStatusRequest;
 import com.group1.app.shift.dto.response.StaffResponse;
 import com.group1.app.shift.entity.Staff;
+import com.group1.app.shift.enums.StaffStatus;
 import com.group1.app.shift.exception.AppException;
 import com.group1.app.shift.exception.ErrorCode;
 import com.group1.app.shift.repository.StaffRepository;
@@ -108,8 +109,16 @@ public class StaffServiceImpl implements StaffService {
 
     @Override
     public void deleteStaff(String id) {
-        if (!staffRepository.existsById(id))
-            throw new AppException(ErrorCode.STAFF_NOT_FOUND, id);
+        Staff staff = staffRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND, id));
+
+        // Chỉ được xóa nếu status là INACTIVE
+        if (staff.getStatus() != StaffStatus.INACTIVE) {
+            Map<String, String> errors = new HashMap<>();
+            errors.put("status", "Staff must be INACTIVE to be deleted");
+            throw new AppException(ErrorCode.INVALID_INPUT, errors);
+        }
+
         staffRepository.deleteById(id);
     }
 
