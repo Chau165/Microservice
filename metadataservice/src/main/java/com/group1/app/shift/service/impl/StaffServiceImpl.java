@@ -130,13 +130,14 @@ public class StaffServiceImpl implements StaffService {
         if (StringUtils.hasText(staff.getUserId())) {
             try {
                 webClient.delete()
-                        .uri(authServiceUrl + "/users/{userId}", staff.getUserId())
+                        .uri(authServiceUrl + "/users/{id}", staff.getUserId())
                         .retrieve()
                         .toBodilessEntity()
                         .block();
             } catch (Exception e) {
                 // Log lỗi nhưng vẫn xóa staff (tránh lỗi cascade)
                 System.err.println("Failed to delete user account: " + e.getMessage());
+                e.printStackTrace();
             }
         }
 

@@ -2,6 +2,9 @@ server:
   address: 0.0.0.0
   port: ${PORT:8763}
 
+auth-service:
+  url: ${AUTH_SERVICE_URL:http://localhost:8081}
+
 spring:
   application:
     name: metadata-service
