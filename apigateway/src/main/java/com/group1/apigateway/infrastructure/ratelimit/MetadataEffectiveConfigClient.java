@@ -15,10 +15,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class MetadataEffectiveConfigClient {
 
+    private static final String INTERNAL_CALL_USER_ID = "system-api-gateway";
+    private static final String INTERNAL_CALL_USER_ROLE = "ADMIN";
+    private static final String INTERNAL_CALL_USER_NAME = "api-gateway";
+
     private final WebClient.Builder webClientBuilder;
     private final IpRateLimitProperties props;
 
     private final AtomicInteger cachedLimit = new AtomicInteger(-1);
+    private final AtomicInteger lastLoggedLimit = new AtomicInteger(-1);
 
     /**
      * Trả limit đã cache. Nếu chưa có thì fetch ngay lần đầu.
@@ -47,6 +52,9 @@ public class MetadataEffectiveConfigClient {
         return webClientBuilder.build()
                 .get()
                 .uri("lb://METADATA-SERVICE/api/metadata/effective?key={key}", key)
+                .header("X-User-Id", INTERNAL_CALL_USER_ID)
+                .header("X-User-Role", INTERNAL_CALL_USER_ROLE)
+                .header("X-User-Name", INTERNAL_CALL_USER_NAME)
                 .retrieve()
                 .bodyToMono(MetadataApiResponse.class)
                 .map(resp -> {
@@ -59,7 +67,12 @@ public class MetadataEffectiveConfigClient {
                     return limit;
                 })
                 .timeout(Duration.ofSeconds(2))
-                .doOnSuccess(limit -> log.info("IP rate limit loaded from metadata: key={}, limit={}", key, limit))
+                .doOnSuccess(limit -> {
+                    int previous = lastLoggedLimit.getAndSet(limit);
+                    if (previous != limit) {
+                        log.info("IP rate limit loaded from metadata: key={}, limit={}", key, limit);
+                    }
+                })
                 .doOnError(e -> log.warn("Failed to load IP rate limit from metadata (fallback={}): {}",
                         props.getDefaultLimit(), e.toString()))
                 .onErrorResume(e -> {

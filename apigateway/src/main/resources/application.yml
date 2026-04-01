@@ -178,11 +178,11 @@ management:
 
 rate-limit:
   ip:
-    enabled: true
-    config-key: gateway.ip.rate_limit.per_minute
-    default-limit: 60
-    window-seconds: 60
-    refresh-seconds: 15
+    enabled: ${RATE_LIMIT_IP_ENABLED:${RATE_LIMIT_ENABLED:true}}
+    config-key: ${RATE_LIMIT_IP_CONFIG_KEY:${RATE_LIMIT_CONFIG_KEY:gateway.ip.rate_limit.per_minute}}
+    default-limit: ${RATE_LIMIT_IP_DEFAULT_LIMIT:${RATE_LIMIT_DEFAULT:60}}
+    window-seconds: ${RATE_LIMIT_IP_WINDOW_SECONDS:${RATE_LIMIT_WINDOW_SECONDS:60}}
+    refresh-seconds: ${RATE_LIMIT_IP_REFRESH_SECONDS:${RATE_LIMIT_REFRESH_SECONDS:15}}
 
 logging:
   pattern:

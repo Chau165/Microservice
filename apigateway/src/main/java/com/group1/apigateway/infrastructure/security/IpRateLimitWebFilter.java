@@ -68,7 +68,7 @@ public class IpRateLimitWebFilter implements WebFilter {
                     if (allowed) {
                         return chain.filter(exchange);
                     }
-                    log.warn("IP rate limit blocked: ip={}, path={}, limit={}/{}}s", ip, path, effectiveLimit, props.getWindowSeconds());
+                    log.warn("IP rate limit blocked: ip={}, path={}, limit={}/{}s", ip, path, effectiveLimit, props.getWindowSeconds());
                     return tooManyRequests(exchange, ip, effectiveLimit);
                 });
     }
