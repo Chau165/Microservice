@@ -109,33 +109,40 @@ public class AttendanceServiceImpl implements AttendanceService {
 
             // ===== CHECK-OUT =====
             else if (item.getStatus() == AttendanceStatus.EARLY_LEAVE) {
-                // Không cho checkout nếu chưa từng checkin
-                if (existing == null || existing.getStatus() == AttendanceStatus.ABSENT) {
-                    throw new AppException(ErrorCode.CANNOT_CHECKOUT_BEFORE_CHECKIN, item.getStaffId());
-                }
-
-                // Nếu record trước đó chưa từng là check-in hợp lệ thì cũng không cho checkout
-                if (!(existing.getStatus() == AttendanceStatus.PRESENT
-                        || existing.getStatus() == AttendanceStatus.LATE
-                        || existing.getStatus() == AttendanceStatus.EARLY_LEAVE)) {
-                    throw new AppException(ErrorCode.CANNOT_CHECKOUT_BEFORE_CHECKIN, item.getStaffId());
-                }
-
-                long diff = Duration.between(now, shiftEnd).toMinutes();
-                earlyMins = (int) Math.max(0, diff);
-
-                if (earlyMins > 0) {
-                    actualStatus = AttendanceStatus.EARLY_LEAVE;
-                } else {
-                    // Nếu trước đó đã từng đi trễ thì vẫn giữ LATE
-                    actualStatus = (existing.getStatus() == AttendanceStatus.LATE)
-                            ? AttendanceStatus.LATE
-                            : AttendanceStatus.PRESENT;
+                // Nếu checkout trước khi shift bắt đầu -> tính ABSENT
+                if (now.isBefore(shiftStart)) {
+                    actualStatus = AttendanceStatus.ABSENT;
+                    lateMins = 0;
                     earlyMins = 0;
-                }
+                } else {
+                    // Không cho checkout nếu chưa từng checkin
+                    if (existing == null || existing.getStatus() == AttendanceStatus.ABSENT) {
+                        throw new AppException(ErrorCode.CANNOT_CHECKOUT_BEFORE_CHECKIN, item.getStaffId());
+                    }
 
-                // Giữ nguyên lateMinutes từ lần check-in trước
-                lateMins = safeInt(existing.getLateMinutes());
+                    // Nếu record trước đó chưa từng là check-in hợp lệ thì cũng không cho checkout
+                    if (!(existing.getStatus() == AttendanceStatus.PRESENT
+                            || existing.getStatus() == AttendanceStatus.LATE
+                            || existing.getStatus() == AttendanceStatus.EARLY_LEAVE)) {
+                        throw new AppException(ErrorCode.CANNOT_CHECKOUT_BEFORE_CHECKIN, item.getStaffId());
+                    }
+
+                    long diff = Duration.between(now, shiftEnd).toMinutes();
+                    earlyMins = (int) Math.max(0, diff);
+
+                    if (earlyMins > 0) {
+                        actualStatus = AttendanceStatus.EARLY_LEAVE;
+                    } else {
+                        // Nếu trước đó đã từng đi trễ thì vẫn giữ LATE
+                        actualStatus = (existing.getStatus() == AttendanceStatus.LATE)
+                                ? AttendanceStatus.LATE
+                                : AttendanceStatus.PRESENT;
+                        earlyMins = 0;
+                    }
+
+                    // Giữ nguyên lateMinutes từ lần check-in trước
+                    lateMins = safeInt(existing.getLateMinutes());
+                }
             }
 
             // ===== ABSENT =====
@@ -222,22 +229,29 @@ public class AttendanceServiceImpl implements AttendanceService {
             actualStatus = lateMins > 0 ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
             earlyMins = 0;
         } else if (request.getStatus() == AttendanceStatus.EARLY_LEAVE) {
-            if (!(attendance.getStatus() == AttendanceStatus.PRESENT
-                    || attendance.getStatus() == AttendanceStatus.LATE
-                    || attendance.getStatus() == AttendanceStatus.EARLY_LEAVE)) {
-                throw new AppException(ErrorCode.CANNOT_CHECKOUT_BEFORE_CHECKIN, attendance.getStaffId());
-            }
-
-            long diff = Duration.between(now, shiftEnd).toMinutes();
-            earlyMins = (int) Math.max(0, diff);
-
-            if (earlyMins > 0) {
-                actualStatus = AttendanceStatus.EARLY_LEAVE;
-            } else {
-                actualStatus = (attendance.getStatus() == AttendanceStatus.LATE)
-                        ? AttendanceStatus.LATE
-                        : AttendanceStatus.PRESENT;
+            // Nếu checkout trước khi shift bắt đầu -> tính ABSENT
+            if (now.isBefore(shiftStart)) {
+                actualStatus = AttendanceStatus.ABSENT;
+                lateMins = 0;
                 earlyMins = 0;
+            } else {
+                if (!(attendance.getStatus() == AttendanceStatus.PRESENT
+                        || attendance.getStatus() == AttendanceStatus.LATE
+                        || attendance.getStatus() == AttendanceStatus.EARLY_LEAVE)) {
+                    throw new AppException(ErrorCode.CANNOT_CHECKOUT_BEFORE_CHECKIN, attendance.getStaffId());
+                }
+
+                long diff = Duration.between(now, shiftEnd).toMinutes();
+                earlyMins = (int) Math.max(0, diff);
+
+                if (earlyMins > 0) {
+                    actualStatus = AttendanceStatus.EARLY_LEAVE;
+                } else {
+                    actualStatus = (attendance.getStatus() == AttendanceStatus.LATE)
+                            ? AttendanceStatus.LATE
+                            : AttendanceStatus.PRESENT;
+                    earlyMins = 0;
+                }
             }
         } else if (request.getStatus() == AttendanceStatus.ABSENT) {
             actualStatus = AttendanceStatus.ABSENT;
