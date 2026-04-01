@@ -28,13 +28,13 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class StaffServiceImpl implements StaffService {
-    StaffRepository staffRepository;
-    WebClient webClient;
+    final StaffRepository staffRepository;
+    final WebClient webClient;
 
     @Value("${auth-service.url:http://localhost:8081}")
-    String authServiceUrl;
+    private String authServiceUrl;
 
     @Override
     public StaffResponse createStaff(StaffCreateRequest request) {
