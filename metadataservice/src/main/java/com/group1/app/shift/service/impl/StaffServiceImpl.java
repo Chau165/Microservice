@@ -19,6 +19,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -31,7 +33,7 @@ import java.util.Optional;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class StaffServiceImpl implements StaffService {
     final StaffRepository staffRepository;
-    final WebClient webClient;
+    final WebClient.Builder webClientBuilder;
 
     @Value("${auth-service.url:http://localhost:8081}")
     private String authServiceUrl;
@@ -126,12 +128,29 @@ public class StaffServiceImpl implements StaffService {
             throw new AppException(ErrorCode.INVALID_INPUT, errors);
         }
 
+        // Lấy token từ request hiện tại
+        String token = null;
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null && attributes.getRequest() != null) {
+                token = attributes.getRequest().getHeader("Authorization");
+            }
+        } catch (Exception e) {
+            // bỏ qua lỗi nếu không lấy được
+        }
+
         // Xóa tài khoản user nếu có userId
         if (StringUtils.hasText(staff.getUserId())) {
             try {
-                webClient.delete()
-                        .uri(authServiceUrl + "/users/{id}", staff.getUserId())
-                        .retrieve()
+                WebClient webClient = webClientBuilder.build();
+                WebClient.RequestHeadersSpec<?> req = webClient.delete()
+                        .uri(authServiceUrl + "/users/{id}", staff.getUserId());
+
+                if (StringUtils.hasText(token)) {
+                    req.header("Authorization", token);
+                }
+
+                req.retrieve()
                         .toBodilessEntity()
                         .block();
             } catch (Exception e) {
