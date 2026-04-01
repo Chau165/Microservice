@@ -289,7 +289,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     // ... các phần trước giữ nguyên ...
 
     @Override
-    @Transactional(readOnly = true) // Lưu ý: Có thể bỏ readOnly nếu bạn muốn hệ thống tự lưu record vắng mặt vào DB
+    @Transactional
     public List<AttendanceResponse> getAttendanceByShift(String shiftId) {
         Shift shift = shiftRepository.findById(shiftId)
                 .orElseThrow(() -> new AppException(ErrorCode.SHIFT_NOT_FOUND));
@@ -313,12 +313,17 @@ public class AttendanceServiceImpl implements AttendanceService {
                     .collect(Collectors.toList());
 
             if (!autoAbsentList.isEmpty()) {
-                attendanceRepository.saveAll(autoAbsentList);
-                list.addAll(autoAbsentList);
+                // Lưu ABSENT vào database
+                List<Attendance> savedAbsent = attendanceRepository.saveAll(autoAbsentList);
+                list.addAll(savedAbsent);
+
                 // Cập nhật trạng thái assignment thành CANCELED cho người vắng
                 assignments.stream()
                         .filter(a -> autoAbsentList.stream().anyMatch(x -> x.getStaffId().equals(a.getStaffId())))
-                        .forEach(a -> { a.setStatus(ScheduleStatus.CANCELED); shiftAssignmentRepository.save(a); });
+                        .forEach(a -> {
+                            a.setStatus(ScheduleStatus.CANCELED);
+                            shiftAssignmentRepository.save(a);
+                        });
             }
 
             // 2. LOGIC QUÊN CHECK-OUT: Đối với những người ĐÃ check-in nhưng ca đã đóng
@@ -429,7 +434,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public DashboardOverviewResponse getDashboardOverview(LocalDate date, String branchId) {
         List<Shift> shifts;
         if (branchId != null && !branchId.trim().isEmpty()) {
@@ -471,6 +476,21 @@ public class AttendanceServiceImpl implements AttendanceService {
                     }
                 } else {
                     if (now.isAfter(autoAbsentTime)) {
+                        // Tự động lưu ABSENT vào database
+                        Attendance autoAbsent = Attendance.builder()
+                                .shiftId(shift.getId())
+                                .staffId(assignment.getStaffId())
+                                .status(AttendanceStatus.ABSENT)
+                                .lateMinutes(0)
+                                .earlyLeaveMinutes(0)
+                                .markedBy("SYSTEM_AUTO")
+                                .build();
+                        attendanceRepository.save(autoAbsent);
+
+                        // Cập nhật assignment thành CANCELED
+                        assignment.setStatus(ScheduleStatus.CANCELED);
+                        shiftAssignmentRepository.save(assignment);
+
                         absentCount++;
                     } else {
                         pendingCount++;
@@ -507,7 +527,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<StaffAttendanceDetailsResponse> getStaffAttendanceHistory(String staffId, Integer month, Integer year, LocalDate exactDate, String branchId) {
         List<String> assignedShiftIds = shiftAssignmentRepository.findAll().stream()
                 .filter(a -> a.getStaffId().equals(staffId))
@@ -551,7 +571,24 @@ public class AttendanceServiceImpl implements AttendanceService {
                     } else {
                         LocalDateTime autoAbsentTime = getShiftEnd(shift).plusMinutes(30);
                         if (now.isAfter(autoAbsentTime)) {
+                            // Tự động lưu ABSENT vào database nếu quá thời gian
+                            Attendance autoAbsent = Attendance.builder()
+                                    .shiftId(shift.getId())
+                                    .staffId(staffId)
+                                    .status(AttendanceStatus.ABSENT)
+                                    .lateMinutes(0)
+                                    .earlyLeaveMinutes(0)
+                                    .markedBy("SYSTEM_AUTO")
+                                    .build();
+                            attendanceRepository.save(autoAbsent);
                             attStatus = "ABSENT";
+
+                            // Cập nhật ShiftAssignment thành CANCELED
+                            shiftAssignmentRepository.findByShiftIdAndStaffId(shift.getId(), staffId)
+                                    .ifPresent(asg -> {
+                                        asg.setStatus(ScheduleStatus.CANCELED);
+                                        shiftAssignmentRepository.save(asg);
+                                    });
                         }
                     }
 
