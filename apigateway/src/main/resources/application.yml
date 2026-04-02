@@ -142,7 +142,7 @@ app:
 
 # CORS Configuration
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,https://capita-coffee-1rhkz5pdf-dientran0410-dotcoms-projects.vercel.app}
 
 security:
   jwt:
