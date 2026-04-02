@@ -23,6 +23,7 @@ import com.group1.app.shift.service.AttendanceService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -352,7 +353,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Transactional(readOnly = true)
     public List<AttendanceReportResponse> getAttendanceReport(int month, int year, String branchId, String managerUserId) {
         // Lấy staffs của manager đó thôi, không lấy toàn bộ staff
-        List<Staff> staffs = staffRepository.findByManagerUserId(managerUserId).stream()
+        List<Staff> staffs = staffRepository.findByManagerUserId(managerUserId, Pageable.unpaged()).stream()
                 .filter(s -> branchId == null || branchId.trim().isEmpty() || branchId.equals(s.getBranchId()))
                 .collect(Collectors.toList());
 
